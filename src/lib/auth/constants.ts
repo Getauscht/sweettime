@@ -1,0 +1,1 @@
+export const TOTP_REQUIRED = 'TOTP_REQUIRED'
