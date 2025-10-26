@@ -14,9 +14,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // GET - List replies for a comment
     if (req.method === 'GET') {
         try {
+            const session = await getServerSession(req, res, authOptions)
+            const userId = session?.user?.id
+
             const replies = await prisma.comment.findMany({
                 where: {
-                    parentId: commentId
+                    parentId: commentId,
+                    deletedAt: null
                 },
                 include: {
                     user: {
@@ -48,12 +52,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 }
             })
 
-            // Transform to include like count
-            const repliesWithLikes = replies.map(reply => ({
-                ...reply,
-                likes: reply._count.likedBy,
-                replyCount: reply._count.replies,
-                _count: undefined
+            // Transform to include like count and liked status
+            const repliesWithLikes = await Promise.all(replies.map(async (reply) => {
+                const liked = userId ? await prisma.commentLike.findUnique({
+                    where: {
+                        userId_commentId: {
+                            userId,
+                            commentId: reply.id
+                        }
+                    }
+                }) : null
+
+                return {
+                    ...reply,
+                    likes: reply._count.likedBy,
+                    replyCount: reply._count.replies,
+                    liked: !!liked,
+                    _count: undefined
+                }
             }))
 
             return res.status(200).json({ replies: repliesWithLikes })
@@ -94,7 +110,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             id: true,
                             name: true
                         }
-                    }
+                    },
+                    chapter: { select: { number: true, webtoon: { select: { slug: true } } } },
+                    webtoon: { select: { slug: true } }
                 }
             })
 
@@ -126,6 +144,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             image: true,
                         },
                     },
+                    webtoon: { select: { slug: true } },
+                    chapter: { select: { number: true, webtoon: { select: { slug: true } } } },
                     mentions: {
                         include: {
                             user: {
@@ -147,24 +167,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             // Create notification for parent comment author (if not replying to self)
             if (parentComment.userId !== session.user.id) {
+                let link: string | undefined
+                if (reply.chapter && reply.chapter.webtoon) {
+                    link = `/webtoon/${reply.chapter.webtoon.slug}/chapter/${reply.chapter.number}?comment=${reply.id}`
+                } else if (reply.webtoon) {
+                    link = `/webtoon/${reply.webtoon.slug}?comment=${reply.id}`
+                }
                 await prisma.notification.create({
                     data: {
                         userId: parentComment.userId,
                         type: 'reply',
                         title: 'Nova resposta ao seu comentário',
                         message: `${session.user.name} respondeu ao seu comentário`,
+                        link,
                     }
                 })
             }
 
             // Create notifications for mentioned users
             if (mentions?.length) {
+                let link: string | undefined
+                if (reply.chapter && reply.chapter.webtoon) {
+                    link = `/webtoon/${reply.chapter.webtoon.slug}/chapter/${reply.chapter.number}?comment=${reply.id}`
+                } else if (reply.webtoon) {
+                    link = `/webtoon/${reply.webtoon.slug}?comment=${reply.id}`
+                }
                 await prisma.notification.createMany({
                     data: mentions.map((userId: string) => ({
                         userId,
                         type: 'mention',
                         title: 'Você foi mencionado',
                         message: `${session.user.name} mencionou você em uma resposta`,
+                        link,
                     })),
                 })
             }

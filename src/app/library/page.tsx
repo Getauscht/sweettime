@@ -197,9 +197,6 @@ export default function LibraryPage() {
                             <div className="text-center py-12">
                                 <Clock className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                                 <p className="text-gray-400 mb-4">Nenhum histórico de leitura</p>
-                                <Link href="/browse">
-                                    <Button>Explorar Webtoons</Button>
-                                </Link>
                             </div>
                         ) : (
                             readingHistory.map((item) => (
@@ -254,9 +251,6 @@ export default function LibraryPage() {
                             <div className="col-span-full text-center py-12">
                                 <Heart className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                                 <p className="text-gray-400 mb-4">Nenhum favorito ainda</p>
-                                <Link href="/browse">
-                                    <Button>Explorar Webtoons</Button>
-                                </Link>
                             </div>
                         ) : (
                             favorites.map((fav) => (
@@ -305,9 +299,6 @@ export default function LibraryPage() {
                             <div className="col-span-full text-center py-12">
                                 <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                                 <p className="text-gray-400 mb-4">Não está seguindo nenhum autor</p>
-                                <Link href="/browse">
-                                    <Button>Explorar Webtoons</Button>
-                                </Link>
                             </div>
                         ) : (
                             follows.map((follow) => (

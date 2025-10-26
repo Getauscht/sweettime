@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation'
 import { Home, BookOpen, User, Tag, Users, BarChart3, Settings, Menu, X, Shield } from 'lucide-react'
 
 const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Painel de Controle', href: '/admin', icon: Home },
     { name: 'Webtoons', href: '/admin/webtoons', icon: BookOpen },
-    { name: 'Authors', href: '/admin/authors', icon: User },
-    { name: 'Genres', href: '/admin/genres', icon: Tag },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Roles', href: '/admin/roles', icon: Shield },
-    { name: 'Reporting & Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Autores', href: '/admin/authors', icon: User },
+    { name: 'Gêneros', href: '/admin/genres', icon: Tag },
+    { name: 'Usuários', href: '/admin/users', icon: Users },
+    { name: 'Funções', href: '/admin/roles', icon: Shield },
+    { name: 'Relatórios e Análises', href: '/admin/analytics', icon: BarChart3 },
 ]
 
 export default function AdminShell({
@@ -43,7 +43,7 @@ export default function AdminShell({
                         <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                             <span className="text-white text-lg font-bold">📖</span>
                         </div>
-                        <span className="text-white font-semibold">Webtoon Admin</span>
+                        <span className="text-white font-semibold">Administração de Webtoon</span>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
@@ -82,7 +82,7 @@ export default function AdminShell({
                         className="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
                     >
                         <Settings className="h-5 w-5" />
-                        <span className="font-medium">Settings</span>
+                        <span className="font-medium">Configurações</span>
                     </Link>
                 </div>
             </aside>
@@ -103,7 +103,7 @@ export default function AdminShell({
                             href="/"
                             className="text-sm text-purple-400 hover:text-purple-300"
                         >
-                            View Site
+                            Ver Site
                         </Link>
                         <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-semibold">A</span>
@@ -118,4 +118,4 @@ export default function AdminShell({
             </div>
         </div>
     )
-}
+} 

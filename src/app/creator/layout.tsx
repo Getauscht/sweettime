@@ -8,11 +8,11 @@ import { prisma } from '@/lib/prisma'
 import { LogOut, Home, BookOpen, BarChart3, Users, Settings, Menu, X } from 'lucide-react'
 
 const navigation = [
-    { name: 'Home', href: '/creator', icon: Home },
-    { name: 'My Series', href: '/creator/series', icon: BookOpen },
-    { name: 'Analytics', href: '/creator/analytics', icon: BarChart3 },
-    { name: 'Community', href: '/creator/community', icon: Users },
-    { name: 'Settings', href: '/creator/settings', icon: Settings },
+    { name: 'Início', href: '/creator', icon: Home },
+    { name: 'Minhas Séries', href: '/creator/series', icon: BookOpen },
+    { name: 'Análises', href: '/creator/analytics', icon: BarChart3 },
+    { name: 'Comunidade', href: '/creator/community', icon: Users },
+    { name: 'Configurações', href: '/creator/settings', icon: Settings },
 ]
 
 export default async function CreatorLayout({
@@ -46,8 +46,8 @@ export default async function CreatorLayout({
                 {/* Logo */}
                 <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
                     <div>
-                        <h1 className="text-white font-bold text-lg">Creator Studio</h1>
-                        <p className="text-white/60 text-xs">Manage your webtoons</p>
+                        <h1 className="text-white font-bold text-lg">Estúdio do Criador</h1>
+                        <p className="text-white/60 text-xs">Gerencie seus webtoons</p>
                     </div>
                 </div>
                 {/* Navigation */}
@@ -71,7 +71,7 @@ export default async function CreatorLayout({
                     <form action="/api/auth/signout" method="post">
                         <button type="submit" className="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 hover:text-white rounded-lg transition-colors w-full">
                             <LogOut className="h-5 w-5" />
-                            <span className="font-medium">Logout</span>
+                            <span className="font-medium">Sair</span>
                         </button>
                     </form>
                 </div>
@@ -85,7 +85,7 @@ export default async function CreatorLayout({
                             href="/"
                             className="text-sm text-purple-400 hover:text-purple-300"
                         >
-                            View Site
+                            Ver Site
                         </Link>
                         <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-semibold">C</span>

@@ -19,11 +19,9 @@ export default function Header() {
   const accountRef = useRef<HTMLDivElement | null>(null)
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/browse', label: 'Browse' },
-    { href: '/genres', label: 'Genres' },
-    { href: '/search', label: 'Search' },
-    { href: '/library', label: 'Library' }
+    { href: '/', label: 'Início' },
+    { href: '/search', label: 'Buscar' },
+    { href: '/library', label: 'Biblioteca' }
   ]
 
   const isActive = (href: string) => pathname === href
@@ -114,7 +112,7 @@ export default function Header() {
                           className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/5 flex items-center"
                         >
                           <LogOut className="h-4 w-4 mr-2 text-red-400" />
-                          <span>Logout</span>
+                          <span>Sair</span>
                         </button>
                       </div>
                     )}
@@ -125,7 +123,7 @@ export default function Header() {
                 <Link href="/auth/login">
                   <Button size="sm" className="bg-purple-600 hover:bg-purple-700 rounded-full">
                     <User className="h-4 w-4 mr-2" />
-                    Login
+                    Entrar
                   </Button>
                 </Link>
               )}
@@ -182,7 +180,7 @@ export default function Header() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="text-white font-medium">{session?.user?.name || 'User'}</div>
+                  <div className="text-white font-medium">{session?.user?.name || 'Usuário'}</div>
                   <div className="text-white/60 text-sm">{session?.user?.email}</div>
                 </div>
               </div>
@@ -222,7 +220,7 @@ export default function Header() {
               >
                 <Button variant="outline" className="w-full justify-start" size="sm">
                   <User className="h-4 w-4 mr-2" />
-                  View Profile
+                  Ver Perfil
                 </Button>
               </Link>
               <Button
@@ -235,7 +233,7 @@ export default function Header() {
                 }}
               >
                 <LogOut className="h-4 w-4 mr-2 text-red-400" />
-                Logout
+                Sair
               </Button>
             </div>
           ) : (
@@ -243,7 +241,7 @@ export default function Header() {
               <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">
                   <User className="h-4 w-4 mr-2" />
-                  Login
+                  Entrar
                 </Button>
               </Link>
             </div>

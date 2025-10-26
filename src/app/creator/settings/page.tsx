@@ -14,18 +14,18 @@ export default function CreatorSettingsPage() {
     const [activeTab, setActiveTab] = useState('profile')
 
     const tabs = [
-        { id: 'profile', name: 'Profile', icon: User },
-        { id: 'notifications', name: 'Notifications', icon: Bell },
-        { id: 'security', name: 'Security', icon: Lock },
-        { id: 'appearance', name: 'Appearance', icon: Palette },
+        { id: 'profile', name: 'Perfil', icon: User },
+        { id: 'notifications', name: 'Notificações', icon: Bell },
+        { id: 'security', name: 'Segurança', icon: Lock },
+        { id: 'appearance', name: 'Aparência', icon: Palette },
     ]
 
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-white">Settings</h1>
+                <h1 className="text-3xl font-bold text-white">Configurações</h1>
                 <p className="text-white/60 mt-2">
-                    Manage your account settings and preferences
+                    Gerencie as configurações e preferências da sua conta
                 </p>
             </div>
 
@@ -39,8 +39,8 @@ export default function CreatorSettingsPage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id
-                                            ? 'bg-purple-600 text-white'
-                                            : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'text-white/60 hover:bg-white/5 hover:text-white'
                                         }`}
                                 >
                                     <tab.icon className="h-5 w-5" />
@@ -55,7 +55,7 @@ export default function CreatorSettingsPage() {
                 <div className="col-span-12 lg:col-span-9">
                     {activeTab === 'profile' && (
                         <Card className="bg-[#0f0b14] border-white/10 p-6">
-                            <h2 className="text-xl font-bold text-white mb-6">Profile Settings</h2>
+                            <h2 className="text-xl font-bold text-white mb-6">Configurações do Perfil</h2>
 
                             <div className="space-y-6">
                                 <div className="flex items-center gap-6">
@@ -64,15 +64,15 @@ export default function CreatorSettingsPage() {
                                     </Avatar>
                                     <div>
                                         <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                                            Change Avatar
+                                            Alterar Avatar
                                         </Button>
-                                        <p className="text-white/40 text-sm mt-2">JPG, PNG or GIF. Max size 2MB</p>
+                                        <p className="text-white/40 text-sm mt-2">JPG, PNG ou GIF. Tamanho máximo 2MB</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label className="text-white">Display Name</Label>
+                                        <Label className="text-white">Nome de exibição</Label>
                                         <Input
                                             defaultValue={session?.user?.name || ''}
                                             className="bg-white/5 border-white/10 text-white"
@@ -89,9 +89,9 @@ export default function CreatorSettingsPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-white">Bio</Label>
+                                        <Label className="text-white">Biografia</Label>
                                         <textarea
-                                            placeholder="Tell us about yourself..."
+                                            placeholder="Conte-nos sobre você..."
                                             rows={4}
                                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500 resize-none"
                                         />
@@ -100,7 +100,7 @@ export default function CreatorSettingsPage() {
 
                                 <div className="flex justify-end">
                                     <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                                        Save Changes
+                                        Salvar Alterações
                                     </Button>
                                 </div>
                             </div>
@@ -109,27 +109,27 @@ export default function CreatorSettingsPage() {
 
                     {activeTab === 'notifications' && (
                         <Card className="bg-[#0f0b14] border-white/10 p-6">
-                            <h2 className="text-xl font-bold text-white mb-6">Notification Preferences</h2>
+                            <h2 className="text-xl font-bold text-white mb-6">Preferências de Notificações</h2>
                             <div className="text-white/40 text-center py-12">
-                                Notification settings coming soon
+                                Configurações de notificações em breve
                             </div>
                         </Card>
                     )}
 
                     {activeTab === 'security' && (
                         <Card className="bg-[#0f0b14] border-white/10 p-6">
-                            <h2 className="text-xl font-bold text-white mb-6">Security Settings</h2>
+                            <h2 className="text-xl font-bold text-white mb-6">Configurações de Segurança</h2>
                             <div className="text-white/40 text-center py-12">
-                                Security settings coming soon
+                                Configurações de segurança em breve
                             </div>
                         </Card>
                     )}
 
                     {activeTab === 'appearance' && (
                         <Card className="bg-[#0f0b14] border-white/10 p-6">
-                            <h2 className="text-xl font-bold text-white mb-6">Appearance Settings</h2>
+                            <h2 className="text-xl font-bold text-white mb-6">Configurações de Aparência</h2>
                             <div className="text-white/40 text-center py-12">
-                                Theme customization coming soon
+                                Personalização de tema em breve
                             </div>
                         </Card>
                     )}

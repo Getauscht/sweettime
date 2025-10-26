@@ -45,7 +45,7 @@ export default function AdminDashboard() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', {
+        return date.toLocaleDateString('pt-BR', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-white/60">Loading...</div>
+                <div className="text-white/60">Carregando...</div>
             </div>
         )
     }
@@ -79,26 +79,26 @@ export default function AdminDashboard() {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-                <p className="text-white/60 mt-2">Manage your webtoon content and users</p>
+                <h1 className="text-3xl font-bold text-white">Painel</h1>
+                <p className="text-white/60 mt-2">Gerencie seu conteúdo e usuários de webtoon</p>
             </div>
 
             {/* Search */}
             <div className="relative">
                 <input
                     type="text"
-                    placeholder="Search webtoons, authors, or users"
+                    placeholder="Pesquisar webtoons, autores ou usuários"
                     className="w-full px-4 py-3 bg-[#0f0b14] border border-white/10 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500"
                 />
             </div>
 
             {/* Statistics */}
             <div>
-                <h2 className="text-xl font-semibold text-white mb-4">Summary Statistics</h2>
+                <h2 className="text-xl font-semibold text-white mb-4">Estatísticas Resumidas</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="bg-[#0f0b14] border-white/10 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-white/60 text-sm">Total Webtoons</h3>
+                            <h3 className="text-white/60 text-sm">Total de Webtoons</h3>
                             <BookOpen className="h-5 w-5 text-purple-400" />
                         </div>
                         <p className="text-4xl font-bold text-white">
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
 
                     <Card className="bg-[#0f0b14] border-white/10 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-white/60 text-sm">Active Users</h3>
+                            <h3 className="text-white/60 text-sm">Usuários Ativos</h3>
                             <Users className="h-5 w-5 text-purple-400" />
                         </div>
                         <p className="text-4xl font-bold text-white">
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
 
                     <Card className="bg-[#0f0b14] border-white/10 p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-white/60 text-sm">Total Authors</h3>
+                            <h3 className="text-white/60 text-sm">Total de Autores</h3>
                             <User className="h-5 w-5 text-purple-400" />
                         </div>
                         <p className="text-4xl font-bold text-white">
@@ -130,20 +130,20 @@ export default function AdminDashboard() {
 
             {/* Recent Activity */}
             <div>
-                <h2 className="text-xl font-semibold text-white mb-4">Recent Activity</h2>
+                <h2 className="text-xl font-semibold text-white mb-4">Atividade Recente</h2>
                 <Card className="bg-[#0f0b14] border-white/10">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-white/10">
                                     <th className="px-6 py-4 text-left text-sm font-medium text-white/60">
-                                        ACTIVITY
+                                        ATIVIDADE
                                     </th>
                                     <th className="px-6 py-4 text-left text-sm font-medium text-white/60">
-                                        DETAILS
+                                        DETALHES
                                     </th>
                                     <th className="px-6 py-4 text-right text-sm font-medium text-white/60">
-                                        DATE
+                                        DATA
                                     </th>
                                 </tr>
                             </thead>
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
                                 {activity.length === 0 ? (
                                     <tr>
                                         <td colSpan={3} className="px-6 py-8 text-center text-white/40">
-                                            No recent activity
+                                            Nenhuma atividade recente
                                         </td>
                                     </tr>
                                 ) : (
@@ -179,4 +179,4 @@ export default function AdminDashboard() {
             </div>
         </div>
     )
-}
+} 

@@ -127,8 +127,11 @@ export function MentionInput({ value, onChange, placeholder, className }: Mentio
                 value={value}
                 onChange={handleTextChange}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder || 'Escreva um comentário... (use @ para mencionar)'}
+                placeholder={placeholder || 'Escreva um comentário... Suporta Markdown.'}
                 className={className}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
             />
 
             {showSuggestions && suggestions.length > 0 && (

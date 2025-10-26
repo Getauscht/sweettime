@@ -120,7 +120,7 @@ export const DELETE = withPermission(
                     action: 'deleted',
                     entityType: 'chapter',
                     entityId: chapterId,
-                    details: `Deleted chapter: '${chapter?.title}'`,
+                    details: `Capítulo deletado: '${chapter?.title || ''}'`,
                     performedBy: userId,
                 },
             })

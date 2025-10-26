@@ -216,7 +216,7 @@ export function NotificationBell() {
                         {notifications.length > 0 && (
                             <div className="p-3 border-t border-purple-600/20 text-center">
                                 <Link
-                                    href="/notifications"
+                                    href="/profile#tab=notifications"
                                     onClick={() => setIsOpen(false)}
                                     className="text-sm text-purple-400 hover:text-purple-300"
                                 >

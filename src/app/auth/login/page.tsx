@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import { TOTP_REQUIRED } from '@/lib/auth/constants'
@@ -15,6 +15,8 @@ import { Github, Mail } from 'lucide-react'
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const callbackUrlParam = searchParams?.get('callbackUrl') || '/'
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [totpToken, setTotpToken] = useState('')
@@ -34,6 +36,7 @@ export default function LoginPage() {
                 password,
                 totpToken: showTotpInput ? totpToken : undefined,
                 redirect: false,
+                callbackUrl: callbackUrlParam,
             })
 
             if (result?.error) {
@@ -44,7 +47,8 @@ export default function LoginPage() {
                     setError(result.error)
                 }
             } else if (result?.ok) {
-                router.push('/')
+                // redirect to callbackUrl if provided (preserved from initial signIn)
+                router.push(callbackUrlParam)
                 router.refresh()
             }
         } catch (err) {
@@ -57,7 +61,7 @@ export default function LoginPage() {
     const handleSocialLogin = async (provider: 'google' | 'github') => {
         setLoading(true)
         try {
-            await signIn(provider, { callbackUrl: '/' })
+            await signIn(provider, { callbackUrl: callbackUrlParam })
         } catch (err) {
             setError('Erro ao fazer login')
             setLoading(false)
@@ -96,7 +100,7 @@ export default function LoginPage() {
             <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-[#1a1625] p-4">
                 <Card className="w-full max-w-md bg-[#0f0b14] border-white/10">
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center text-white">Login</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-center text-white">Entrar</CardTitle>
                         <CardDescription className="text-center text-white/60">
                             Entre com sua conta para continuar
                         </CardDescription>

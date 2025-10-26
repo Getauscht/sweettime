@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         action: 'update_profile',
                         entityType: 'User',
                         entityId: userId,
-                        details: `User updated profile: ${email}`,
+                        details: `Usuário atualizou o perfil: ${email}`,
                         performedBy: userId
                     }
                 })

@@ -199,7 +199,11 @@ export default function Home() {
                       <Button
                         variant="outline"
                         onClick={() => router.push(`/webtoon/${webtoon.slug}`)}
-                        className="border-white/20 text-white hover:bg-white/10"
+                        // ensure the outline button stays transparent on dark banner
+                        // the shared "outline" variant adds a bg class from the design system
+                        // so we explicitly force a transparent background here and keep
+                        // the white border/text to match the banner's color pattern.
+                        className="bg-transparent border-white/20 text-white hover:bg-white/10"
                       >
                         Ver Detalhes
                       </Button>
@@ -248,9 +252,6 @@ export default function Home() {
               <Clock className="h-6 w-6 text-purple-500" />
               Atualizados Recentemente
             </h2>
-            <Link href="/browse?sort=updated" className="text-purple-400 hover:text-purple-300 text-sm">
-              Ver todos
-            </Link>
           </div>
 
           {recentlyUpdated.length > 0 ? (

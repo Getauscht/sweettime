@@ -24,8 +24,6 @@ export default async function AdminLayout({
         include: { role: true }
     })
 
-    console.log('User Data:', await getUserData)
-
     // Not admin -> display error page
 
     const roleName = getUserData?.role?.name

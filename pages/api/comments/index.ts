@@ -13,7 +13,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { webtoonId, chapterId, sort } = req.query
 
         try {
-            const where: Prisma.CommentWhereInput = {}
+            const where: Prisma.CommentWhereInput = {
+                deletedAt: null
+            }
             if (webtoonId) where.webtoonId = webtoonId as string
             if (chapterId) where.chapterId = chapterId as string
 
@@ -70,6 +72,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             _count: {
                                 select: {
                                     likedBy: true,
+                                    replies: {
+                                        where: {
+                                            deletedAt: null
+                                        }
+                                    }
                                 }
                             }
                         },
@@ -114,6 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     return {
                         ...reply,
                         likes: reply._count.likedBy,
+                        replyCount: reply._count.replies,
                         liked: !!replyLiked,
                         _count: undefined
                     }
@@ -183,6 +191,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             image: true,
                         },
                     },
+                    webtoon: {
+                        select: { slug: true }
+                    },
+                    chapter: {
+                        select: {
+                            number: true,
+                            webtoon: { select: { slug: true } }
+                        }
+                    },
                     mentions: {
                         include: {
                             user: {
@@ -198,17 +215,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             // Create notifications for mentioned users
             if (mentions?.length) {
+                // Build deep link to comment
+                let link: string | undefined
+                if (comment.chapter && comment.chapter.webtoon) {
+                    link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
+                } else if (comment.webtoon) {
+                    link = `/webtoon/${comment.webtoon.slug}?comment=${comment.id}`
+                }
                 await prisma.notification.createMany({
                     data: mentions.map((userId: string) => ({
                         userId,
                         type: 'mention',
                         title: 'Você foi mencionado',
                         message: `${session.user.name} mencionou você em um comentário`,
-                        link: webtoonId
-                            ? `/webtoon/${webtoonId}`
-                            : chapterId
-                                ? `/webtoon/${webtoonId}/chapter/${chapterId}`
-                                : undefined,
+                        link,
                     })),
                 })
             }

@@ -21,7 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
             // Check if comment exists
             const comment = await prisma.comment.findUnique({
-                where: { id: commentId }
+                where: { id: commentId },
+                include: {
+                    webtoon: { select: { slug: true } },
+                    chapter: { select: { number: true, webtoon: { select: { slug: true } } } }
+                }
             })
 
             if (!comment) {
@@ -72,12 +76,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 // Create notification for comment author (if not self-like)
                 if (comment.userId !== session.user.id) {
+                    let link: string | undefined
+                    if (comment.chapter && comment.chapter.webtoon) {
+                        link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
+                    } else if (comment.webtoon) {
+                        link = `/webtoon/${(comment as any).webtoon.slug}?comment=${comment.id}`
+                    }
                     await prisma.notification.create({
                         data: {
                             userId: comment.userId,
                             type: 'like',
                             title: 'Novo like no seu comentário',
                             message: `${session.user.name} curtiu seu comentário`,
+                            link,
                         }
                     })
                 }

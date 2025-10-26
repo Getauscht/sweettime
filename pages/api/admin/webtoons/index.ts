@@ -309,7 +309,7 @@ export const DELETE = withPermission(
                     action: 'deleted',
                     entityType: 'webtoon',
                     entityId: webtoonId,
-                    details: `Deleted webtoon: '${webtoon?.title}'`,
+                    details: `Webtoon excluída: '${webtoon?.title || ''}'`,
                     performedBy: userId,
                 },
             })

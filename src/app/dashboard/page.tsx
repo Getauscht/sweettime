@@ -38,7 +38,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
             <div className="max-w-4xl mx-auto py-8 space-y-6">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold">Dashboard</h1>
+                    <h1 className="text-3xl font-bold">Painel</h1>
                     <Button variant="outline" onClick={() => signOut({ callbackUrl: '/auth/login' })}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sair

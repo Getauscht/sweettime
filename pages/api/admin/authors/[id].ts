@@ -103,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     action: 'delete_author',
                     entityType: 'Author',
                     entityId: id as string,
-                    details: `Deleted author: ${author.name}`,
+                    details: `Autor deletado: ${author.name}`,
                 }
             })
 

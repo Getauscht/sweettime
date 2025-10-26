@@ -126,7 +126,7 @@ export default function ChapterReader({
                     <div className="w-full h-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg flex items-center justify-center">
                         <div className="text-6xl">📖</div>
                         <div className="absolute bottom-4 right-4 bg-black/60 px-3 py-1 rounded text-sm">
-                            Page {i}
+                            Página {i}
                         </div>
                     </div>
                 </div>

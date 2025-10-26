@@ -50,17 +50,17 @@ export default function WebtoonsManagement() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-white">Webtoons</h1>
-                    <p className="text-white/60 mt-2">Manage all webtoons in the system</p>
+                    <p className="text-white/60 mt-2">Gerencie todos os webtoons do sistema</p>
                 </div>
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => router.push('/admin/webtoons/new')}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Webtoon
+                    Adicionar Webtoon
                 </Button>
             </div>
 
             <Input
                 type="text"
-                placeholder="Search webtoons..."
+                placeholder="Pesquisar webtoons..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-[#0f0b14] border-white/10 text-white placeholder:text-white/40"
@@ -73,33 +73,33 @@ export default function WebtoonsManagement() {
                             <BookOpen className="h-12 w-12 text-white/40" />
                         </div>
                         <h3 className="text-white font-semibold text-lg mb-2">{webtoon.title}</h3>
-                        <p className="text-white/60 text-sm mb-4">by {webtoon.credits?.map((c: any) => c.author?.name).join(', ')}</p>
+                        <p className="text-white/60 text-sm mb-4">por {webtoon.credits?.map((c: any) => c.author?.name).join(', ')}</p>
                         <div className="flex items-center justify-between text-sm mb-4">
-                            <span className="text-white/60">{webtoon._count?.chapters || webtoon.chapters} chapters</span>
-                            <span className="text-white/60">{(webtoon.views || 0).toLocaleString()} views</span>
+                            <span className="text-white/60">{webtoon._count?.chapters || webtoon.chapters} capítulos</span>
+                            <span className="text-white/60">{(webtoon.views || 0).toLocaleString()} visualizações</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Button variant="ghost" size="sm" className="flex-1 text-white hover:bg-white/10" onClick={() => router.push(`/webtoon/${webtoon.slug}`)}>
                                 <Eye className="h-4 w-4 mr-1" />
-                                View
+                                Ver
                             </Button>
                             <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => router.push(`/admin/webtoons/${webtoon.id}/edit`)}>
                                 <Edit className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={async () => {
-                                if (!confirm('Delete this series?')) return
+                                if (!confirm('Tem certeza que deseja excluir esta série?')) return
                                 try {
                                     const res = await fetch(`/api/admin/webtoons?webtoonId=${webtoon.id}`, { method: 'DELETE' })
                                     if (res.ok) {
                                         fetchList()
-                                        toast('Deleted', 'success')
+                                        toast('Excluído', 'success')
                                     } else {
                                         const err = await res.json().catch(() => ({}))
-                                        toast(err.error || 'Failed to delete', 'error')
+                                        toast(err.error || 'Falha ao excluir', 'error')
                                     }
                                 } catch (err) {
                                     console.error('Delete error', err)
-                                    toast('Failed to delete', 'error')
+                                    toast('Falha ao excluir', 'error')
                                 }
                             }}>
                                 <Trash2 className="h-4 w-4" />
@@ -110,9 +110,9 @@ export default function WebtoonsManagement() {
             </div>
 
             <div className="flex items-center justify-center gap-4 mt-6">
-                <Button variant="ghost" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="text-white">Prev</Button>
-                <div className="text-white/60">Page {page} / {totalPages}</div>
-                <Button variant="ghost" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="text-white">Next</Button>
+                <Button variant="ghost" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="text-white">Anterior</Button>
+                <div className="text-white/60">Página {page} / {totalPages}</div>
+                <Button variant="ghost" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="text-white">Próximo</Button>
             </div>
             <ToastContainer />
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -87,6 +87,10 @@ export default function WebtoonPage() {
     const [comments, setComments] = useState<Comment[]>([])
     const [commentText, setCommentText] = useState('')
     const [commentMentions, setCommentMentions] = useState<string[]>([])
+    const [userRating, setUserRating] = useState<number | null>(null)
+    const [hoverRating, setHoverRating] = useState<number | null>(null)
+    const [showRatingSelector, setShowRatingSelector] = useState(false)
+    const ratingRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         if (!slug) return
@@ -128,6 +132,47 @@ export default function WebtoonPage() {
         }
 
         fetchStatus()
+    }, [webtoon, session])
+
+    // Close rating selector when clicking outside or pressing Escape
+    useEffect(() => {
+        if (!showRatingSelector) return
+
+        const onDocClick = (e: MouseEvent) => {
+            const path = (e.composedPath && (e as any).composedPath()) || (e as any).path || []
+            if (ratingRef.current && !path.includes(ratingRef.current)) {
+                setShowRatingSelector(false)
+            }
+        }
+
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowRatingSelector(false)
+        }
+
+        document.addEventListener('click', onDocClick)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('click', onDocClick)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [showRatingSelector])
+
+    // Fetch current user's rating for this webtoon
+    useEffect(() => {
+        if (!webtoon) return
+
+        const fetchRating = async () => {
+            try {
+                const res = await fetch(`/api/webtoons/${webtoon.id}/rating`)
+                if (!res.ok) return
+                const data = await res.json()
+                setUserRating(data.rating ?? null)
+            } catch (err) {
+                console.error('Failed to fetch user rating', err)
+            }
+        }
+
+        fetchRating()
     }, [webtoon, session])
 
     // Comments are now handled by the CommentsSection component.
@@ -213,6 +258,12 @@ export default function WebtoonPage() {
         )
     }
 
+    // Normalize authors list and remove duplicates by id (some API responses may include
+    // duplicate author entries or legacy `author` vs `authors` fields). This prevents
+    // React's "Encountered two children with the same key" error when rendering.
+    const _rawAuthors: any[] = ((webtoon as any).authors ?? webtoon.author) ?? []
+    const authors = _rawAuthors.filter((a, i) => _rawAuthors.findIndex(x => x.id === a.id) === i)
+
     return (
         <div className="min-h-screen bg-[#0f0b14]">
             <Header />
@@ -245,28 +296,16 @@ export default function WebtoonPage() {
                                 por{' '}
                             </span>
                             <div className="inline space-x-2">
-                                {((webtoon as any).authors ?? webtoon.author).map((author: any, index: number) => (
+                                {authors.map((author: any, index: number) => (
                                     <Link
-                                        key={author.id}
+                                        key={author.id ?? `${author.slug}-${index}`}
                                         href={`/author/${author.slug}`}
                                         className="text-purple-400 hover:text-purple-300 transition-colors"
                                     >
-                                        {author.name}{index < ((webtoon as any).authors ?? webtoon.author).length - 1 ? ',' : ''}
+                                        {author.name}{index < authors.length - 1 ? ',' : ''}
                                     </Link>
                                 ))}
                             </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {webtoon.genres.map((genre) => (
-                                <Link
-                                    key={genre.id}
-                                    href={`/browse?genre=${genre.slug}`}
-                                    className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm hover:bg-purple-600/30 transition-colors"
-                                >
-                                    {genre.name}
-                                </Link>
-                            ))}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-6 text-gray-400 text-sm">
@@ -278,12 +317,110 @@ export default function WebtoonPage() {
                                 <Heart className="h-4 w-4" />
                                 <span>{webtoon.likes.toLocaleString()} favoritos</span>
                             </div>
-                            {webtoon.rating && (
-                                <div className="flex items-center gap-2">
+                            <div ref={ratingRef} className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!session) {
+                                            router.push('/auth/login')
+                                            return
+                                        }
+                                        setShowRatingSelector((s) => !s)
+                                    }}
+                                    className="flex items-center gap-2 bg-transparent p-0 border-0"
+                                    aria-expanded={showRatingSelector}
+                                >
                                     <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                                    <span>{webtoon.rating.toFixed(1)}</span>
-                                </div>
-                            )}
+                                    <span>{webtoon.rating !== null ? webtoon.rating.toFixed(1) : '—'}</span>
+                                </button>
+
+                                {showRatingSelector && (
+                                    <div className="ml-3 flex items-center gap-1">
+                                        <div className="flex items-center select-none" aria-label="Avaliar obra">
+                                            {Array.from({ length: 5 }).map((_, i) => {
+                                                const index = i
+                                                const displayValue = hoverRating ?? userRating ?? null
+                                                const avg = webtoon.rating ?? 0
+                                                const avgFill = avg >= index + 1 ? 1 : avg >= index + 0.5 ? 0.5 : 0
+
+                                                const fill = (displayValue !== null)
+                                                    ? (displayValue >= index + 1 ? 1 : displayValue >= index + 0.5 ? 0.5 : 0)
+                                                    : avgFill
+
+                                                const StarIcon = Star
+
+                                                return (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        onMouseMove={(e) => {
+                                                            const rect = (e.target as HTMLElement).getBoundingClientRect()
+                                                            const relativeX = e.clientX - rect.left
+                                                            const half = relativeX < rect.width / 2
+                                                            setHoverRating(index + (half ? 0.5 : 1))
+                                                        }}
+                                                        onMouseLeave={() => setHoverRating(null)}
+                                                        onClick={async (e) => {
+                                                            e.preventDefault()
+                                                            // compute clicked value again in case
+                                                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                                            const relativeX = (e.nativeEvent as any).clientX - rect.left
+                                                            const half = relativeX < rect.width / 2
+                                                            const selected = index + (half ? 0.5 : 1)
+
+                                                            try {
+                                                                const res = await fetch(`/api/webtoons/${webtoon.id}/rating`, {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ rating: selected })
+                                                                })
+                                                                if (res.ok) {
+                                                                    const data = await res.json()
+                                                                    setUserRating(selected)
+                                                                    setShowRatingSelector(false)
+                                                                    if (data.average !== undefined) {
+                                                                        setWebtoon((w) => w ? { ...w, rating: data.average } as Webtoon : w)
+                                                                    }
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('Failed to submit rating', err)
+                                                            }
+                                                        }}
+                                                        className="relative p-0 m-0 bg-transparent border-0 cursor-pointer"
+                                                        style={{ width: 20, height: 20 }}
+                                                        aria-label={`Dar ${index + 1} estrelas`}
+                                                    >
+                                                        <StarIcon className={`h-5 w-5 ${fill === 1 ? 'text-yellow-400 fill-yellow-400' : fill === 0.5 ? 'text-yellow-400/60' : 'text-gray-600'}`} />
+                                                    </button>
+                                                )
+                                            })}
+                                            {/* Clear rating button */}
+                                            {userRating !== null && (
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await fetch(`/api/webtoons/${webtoon.id}/rating`, { method: 'DELETE' })
+                                                            if (res.ok) {
+                                                                const data = await res.json()
+                                                                setUserRating(null)
+                                                                setShowRatingSelector(false)
+                                                                if (data.average !== undefined) {
+                                                                    setWebtoon((w) => w ? { ...w, rating: data.average } as Webtoon : w)
+                                                                }
+                                                            }
+                                                        } catch (err) {
+                                                            console.error('Failed to delete rating', err)
+                                                        }
+                                                    }}
+                                                    className="ml-2 text-xs text-gray-400 hover:text-gray-200"
+                                                >
+                                                    Remover
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex items-center gap-2">
                                 <BookOpen className="h-4 w-4" />
                                 <span>{webtoon.totalChapters} capítulos</span>

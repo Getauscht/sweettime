@@ -77,7 +77,7 @@ export default async function handler(
                 } as any,
             })
 
-            await prisma.activityLog.create({ data: { action: 'enable_2fa', entityType: 'user', entityId: user.id, performedBy: user.id, details: 'User enabled TOTP' } })
+            await prisma.activityLog.create({ data: { action: 'enable_2fa', entityType: 'user', entityId: user.id, performedBy: user.id, details: 'Usuário habilitou TOTP' } })
 
             return res.status(200).json({ message: 'TOTP habilitado com sucesso' })
         } catch (error) {
@@ -127,7 +127,7 @@ export default async function handler(
             }
 
             await prisma.user.update({ where: { id: user.id }, data: { totpEnabled: false, totpSecretEncrypted: null } as any })
-            await prisma.activityLog.create({ data: { action: 'disable_2fa', entityType: 'user', entityId: user.id, performedBy: user.id, details: 'User disabled TOTP' } })
+            await prisma.activityLog.create({ data: { action: 'disable_2fa', entityType: 'user', entityId: user.id, performedBy: user.id, details: 'Usuário desabilitou TOTP' } })
 
             return res.status(200).json({ message: 'TOTP desabilitado com sucesso' })
         } catch (error) {

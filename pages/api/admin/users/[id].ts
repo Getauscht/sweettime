@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     action: 'delete_user',
                     entityType: 'User',
                     entityId: id as string,
-                    details: `Deleted user`,
+                    details: `Usuário deletado`
                 }
             })
 

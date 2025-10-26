@@ -93,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     action: 'create_admin',
                     entityType: 'User',
                     entityId: user.id,
-                    details: `Admin user created: ${email}`,
+                    details: `Usuário admin criado: ${user.email}`,
                     performedBy: 'system',
                 },
             })

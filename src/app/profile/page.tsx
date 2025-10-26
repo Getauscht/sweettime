@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,6 +71,36 @@ export default function ProfilePage() {
 
         fetchProfile()
     }, [status, router])
+
+    // Sync tab state with URL (#tab=... or ?tab=...)
+    useEffect(() => {
+        const applyFromUrl = () => {
+            try {
+                const url = new URL(window.location.href)
+                const searchTab = url.searchParams.get('tab')
+                let hashTab: string | null = null
+                if (url.hash && url.hash.startsWith('#tab=')) {
+                    hashTab = url.hash.slice(5)
+                }
+                const t = (hashTab || searchTab) as 'favorites' | 'history' | 'lists' | 'notifications' | null
+                if (t && ['favorites', 'history', 'lists', 'notifications'].includes(t)) {
+                    setActiveTab(t as any)
+                }
+            } catch { }
+        }
+        applyFromUrl()
+        const onHash = () => applyFromUrl()
+        window.addEventListener('hashchange', onHash)
+        return () => window.removeEventListener('hashchange', onHash)
+    }, [])
+
+    useEffect(() => {
+        // Write tab to hash for deep-linking
+        const desired = `#tab=${activeTab}`
+        if (window.location.hash !== desired) {
+            window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${desired}`)
+        }
+    }, [activeTab])
 
     useEffect(() => {
         if (status !== 'authenticated') return
@@ -176,12 +206,12 @@ export default function ProfilePage() {
                         </Avatar>
 
                         <h1 className="text-4xl font-bold text-white mt-6">{profileData.name || 'Usuário'}</h1>
-                        <p className="text-white/60 mt-2">Avid reader and webtoon enthusiast. Always on the lookout for new stories to dive into.</p>
-                        <p className="text-white/40 mt-1">Joined {new Date(profileData.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                        <p className="text-white/60 mt-2">Leitor ávido e entusiasta de webtoons. Sempre em busca de novas histórias para mergulhar.</p>
+                        <p className="text-white/40 mt-1">Entrou em {new Date(profileData.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
 
                         <div className="mt-6">
                             <Button onClick={() => setIsEditOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2">
-                                Edit Profile
+                                Editar Perfil
                             </Button>
                         </div>
                     </div>
@@ -189,10 +219,10 @@ export default function ProfilePage() {
                     <div className="mt-10">
                         <Tabs
                             items={[
-                                { key: 'favorites', label: 'Favorites' },
-                                { key: 'history', label: 'Reading History' },
-                                { key: 'lists', label: 'Reading Lists' },
-                                { key: 'notifications', label: 'Notifications' },
+                                { key: 'favorites', label: 'Favoritos' },
+                                { key: 'history', label: 'Histórico de Leitura' },
+                                { key: 'lists', label: 'Listas de Leitura' },
+                                { key: 'notifications', label: 'Notificações' },
                             ]}
                             value={activeTab}
                             onChange={(k) => setActiveTab(k as any)}
@@ -200,7 +230,7 @@ export default function ProfilePage() {
                                 notifications: (
                                     <div role="region" aria-live="polite" aria-label="Notifications list">
                                         <div className="flex items-center justify-between mb-6">
-                                            <h2 className="text-xl font-semibold text-white">Notifications</h2>
+                                            <h2 className="text-xl font-semibold text-white">Notificações</h2>
                                             <div className="text-sm text-white/60">
                                                 <button onClick={async () => {
                                                     try {
@@ -209,7 +239,7 @@ export default function ProfilePage() {
                                                             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
                                                         }
                                                     } catch (e) { }
-                                                }} className="mr-4">Mark all as read</button>
+                                                }} className="mr-4">Marcar todas como lidas</button>
                                                 <button onClick={async () => {
                                                     try {
                                                         const res = await fetch('/api/notifications', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clearAll: true }) })
@@ -217,7 +247,7 @@ export default function ProfilePage() {
                                                             setNotifications([])
                                                         }
                                                     } catch (e) { }
-                                                }}>Clear all</button>
+                                                }}>Limpar todas</button>
                                             </div>
                                         </div>
 
@@ -235,7 +265,7 @@ export default function ProfilePage() {
                                             ))}
 
                                             {!notificationsLoading && notifications.length === 0 && (
-                                                <p className="text-white/60">No notifications</p>
+                                                <p className="text-white/60">Nenhuma notificação</p>
                                             )}
 
                                             {!notificationsLoading && notifications.map((n) => (
@@ -271,7 +301,7 @@ export default function ProfilePage() {
 
                                 favorites: (
                                     <div>
-                                        <h2 className="text-xl font-semibold text-white mb-4">Favorites</h2>
+                                        <h2 className="text-xl font-semibold text-white mb-4">Favoritos</h2>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                             {favoritesLoading && Array.from({ length: 4 }).map((_, i) => (
                                                 <div key={i} className="flex flex-col items-start">
@@ -280,7 +310,7 @@ export default function ProfilePage() {
                                                 </div>
                                             ))}
 
-                                            {!favoritesLoading && favorites.length === 0 && <p className="text-white/60">No favorites yet</p>}
+                                            {!favoritesLoading && favorites.length === 0 && <p className="text-white/60">Nenhum favorito ainda</p>}
                                             {!favoritesLoading && favorites.map(f => (
                                                 <div key={f.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
                                                     <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden">
@@ -295,7 +325,7 @@ export default function ProfilePage() {
 
                                 history: (
                                     <div>
-                                        <h2 className="text-xl font-semibold text-white mb-4">Reading History</h2>
+                                        <h2 className="text-xl font-semibold text-white mb-4">Histórico de Leitura</h2>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                             {historyLoading && Array.from({ length: 4 }).map((_, i) => (
                                                 <div key={i} className="flex flex-col items-start">
@@ -304,7 +334,7 @@ export default function ProfilePage() {
                                                 </div>
                                             ))}
 
-                                            {!historyLoading && history.length === 0 && <p className="text-white/60">No history yet</p>}
+                                            {!historyLoading && history.length === 0 && <p className="text-white/60">Nenhum histórico ainda</p>}
                                             {!historyLoading && history.map(h => (
                                                 <div key={h.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
                                                     <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden">
@@ -319,7 +349,7 @@ export default function ProfilePage() {
 
                                 lists: (
                                     <div>
-                                        <h2 className="text-xl font-semibold text-white mb-4">Reading Lists</h2>
+                                        <h2 className="text-xl font-semibold text-white mb-4">Listas de Leitura</h2>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                             <div className="w-full h-40 bg-white/5 rounded-lg" />
                                             <div className="w-full h-40 bg-white/5 rounded-lg" />
@@ -360,7 +390,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-email" className="text-white">Email</Label>
+                            <Label htmlFor="edit-email" className="text-white">E-mail</Label>
                             <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" className="bg-white/5 border-white/10 text-white placeholder:text-white/40" required />
                         </div>
 

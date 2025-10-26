@@ -43,6 +43,10 @@ export const PERMISSIONS = {
     // System
     SYSTEM_SETTINGS: 'system.settings',
     SYSTEM_LOGS: 'system.logs',
+
+    // Comments
+    COMMENTS_VIEW: 'comments.view',
+    COMMENTS_MODERATE: 'comments.moderate',
 } as const
 
 export type PermissionName = typeof PERMISSIONS[keyof typeof PERMISSIONS]

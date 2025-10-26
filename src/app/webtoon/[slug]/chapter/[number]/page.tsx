@@ -292,9 +292,8 @@ export default function ChapterPage() {
             )}
 
             {/* Fixed Header */}
-            <header className={`fixed top-0 left-0 right-0 z-40 bg-[#1a1625]/95 backdrop-blur-sm border-b border-purple-600/20 transition-transform duration-300 ${
-                readerSettings.headerVisibility === 'hidden' ? '-translate-y-full' : ''
-            }`}>
+            <header className={`fixed top-0 left-0 right-0 z-40 bg-[#1a1625]/95 backdrop-blur-sm border-b border-purple-600/20 transition-transform duration-300 ${readerSettings.headerVisibility === 'hidden' ? '-translate-y-full' : ''
+                }`}>
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -342,11 +341,11 @@ export default function ChapterPage() {
             {/* Content */}
             <main className="pt-24 pb-12">
                 <div className={`container mx-auto px-4 ${readerSettings.pageMode === 'vertical-scroll' ? 'max-w-4xl' : 'max-w-7xl'}`}>
-                    <div 
+                    <div
                         ref={contentRef}
-                        style={{ 
+                        style={{
                             gap: `${readerSettings.pageSpacing}px`,
-                            direction: readerSettings.readingDirection 
+                            direction: readerSettings.readingDirection
                         }}
                         className={`
                             ${readerSettings.grayscale ? 'grayscale' : ''}
@@ -354,7 +353,7 @@ export default function ChapterPage() {
                         `}
                     >
                         {Array.isArray(chapter.content) ? (
-                            <div 
+                            <div
                                 className={`
                                     ${readerSettings.pageMode === 'vertical-scroll' ? 'flex flex-col' : ''}
                                     ${readerSettings.pageMode === 'horizontal-scroll' ? 'flex flex-row overflow-x-auto' : ''}
@@ -367,7 +366,7 @@ export default function ChapterPage() {
                                     <img
                                         key={index}
                                         src={url}
-                                        alt={`Page ${index + 1}`}
+                                        alt={`Página ${index + 1}`}
                                         className={`
                                             rounded-lg mx-auto block
                                             ${readerSettings.fitWidth && readerSettings.fitHeight ? 'w-full h-screen object-contain' : ''}

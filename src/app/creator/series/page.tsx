@@ -48,16 +48,31 @@ export default function MySeriesPage() {
         return w.status === 'draft'
     })
 
+    const statusLabel = (status: string) => {
+        switch (status) {
+            case 'draft':
+                return 'Rascunho'
+            case 'ongoing':
+                return 'Em andamento'
+            case 'completed':
+                return 'Concluído'
+            case 'hiatus':
+                return 'Hiato'
+            default:
+                return status
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-white">My Series</h1>
+                <h1 className="text-3xl font-bold text-white">Minhas Séries</h1>
                 <Button
                     onClick={() => router.push('/creator/series/new')}
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    New Series
+                    Nova Série
                 </Button>
             </div>
 
@@ -66,11 +81,11 @@ export default function MySeriesPage() {
                 <button
                     onClick={() => setActiveTab('published')}
                     className={`pb-4 px-2 font-medium transition-colors relative ${activeTab === 'published'
-                            ? 'text-purple-400'
-                            : 'text-white/60 hover:text-white'
+                        ? 'text-purple-400'
+                        : 'text-white/60 hover:text-white'
                         }`}
                 >
-                    Published
+                    Publicadas
                     {activeTab === 'published' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400" />
                     )}
@@ -78,11 +93,11 @@ export default function MySeriesPage() {
                 <button
                     onClick={() => setActiveTab('drafts')}
                     className={`pb-4 px-2 font-medium transition-colors relative ${activeTab === 'drafts'
-                            ? 'text-purple-400'
-                            : 'text-white/60 hover:text-white'
+                        ? 'text-purple-400'
+                        : 'text-white/60 hover:text-white'
                         }`}
                 >
-                    Drafts
+                    Rascunhos
                     {activeTab === 'drafts' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400" />
                     )}
@@ -92,17 +107,17 @@ export default function MySeriesPage() {
             {/* Content */}
             {loading ? (
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-white/60">Loading...</div>
+                    <div className="text-white/60">Carregando...</div>
                 </div>
             ) : filteredWebtoons.length === 0 ? (
                 <Card className="bg-[#0f0b14] border-white/10 p-12 text-center">
-                    <p className="text-white/60 mb-4">No series found</p>
+                    <p className="text-white/60 mb-4">Nenhuma série encontrada</p>
                     <Button
                         onClick={() => router.push('/creator/series/new')}
                         className="bg-purple-600 hover:bg-purple-700 text-white"
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Series
+                        Crie sua primeira série
                     </Button>
                 </Card>
             ) : (
@@ -110,10 +125,10 @@ export default function MySeriesPage() {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-white/10">
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">TITLE</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">TÍTULO</th>
                                 <th className="px-6 py-4 text-left text-sm font-medium text-white/60">STATUS</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">LAST UPDATED</th>
-                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">ACTIONS</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">ÚLTIMA ATUALIZAÇÃO</th>
+                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">AÇÕES</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -135,7 +150,7 @@ export default function MySeriesPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm capitalize">
-                                            {webtoon.status}
+                                            {statusLabel(webtoon.status)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-white/60">
@@ -148,7 +163,7 @@ export default function MySeriesPage() {
                                             onClick={() => router.push(`/creator/series/${webtoon.id}/edit`)}
                                             className="text-purple-400 hover:text-purple-300 hover:bg-white/10"
                                         >
-                                            Edit
+                                            Editar
                                         </Button>
                                     </td>
                                 </tr>

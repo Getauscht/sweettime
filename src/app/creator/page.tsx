@@ -51,28 +51,28 @@ export default function CreatorHomePage() {
 
     const statCards = [
         {
-            title: 'Total Series',
+            title: 'Total de Séries',
             value: stats.totalSeries,
             icon: BookOpen,
             color: 'text-purple-400',
             bgColor: 'bg-purple-500/10',
         },
         {
-            title: 'Total Chapters',
+            title: 'Total de Capítulos',
             value: stats.totalChapters,
             icon: TrendingUp,
             color: 'text-pink-400',
             bgColor: 'bg-pink-500/10',
         },
         {
-            title: 'Total Views',
+            title: 'Total de Visualizações',
             value: stats.totalViews.toLocaleString(),
             icon: Eye,
             color: 'text-blue-400',
             bgColor: 'bg-blue-500/10',
         },
         {
-            title: 'Followers',
+            title: 'Seguidores',
             value: stats.totalFollowers.toLocaleString(),
             icon: Users,
             color: 'text-green-400',
@@ -84,15 +84,15 @@ export default function CreatorHomePage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Creator Studio</h1>
+                    <h1 className="text-3xl font-bold text-white">Estúdio do Criador</h1>
                     <p className="text-white/60 mt-2">
-                        Welcome back! Here's an overview of your creative journey.
+                        Bem-vindo de volta! Aqui está uma visão geral da sua jornada criativa.
                     </p>
                 </div>
                 <Link href="/creator/series/new">
                     <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                         <Plus className="h-4 w-4 mr-2" />
-                        New Series
+                        Nova Série
                     </Button>
                 </Link>
             </div>
@@ -118,14 +118,14 @@ export default function CreatorHomePage() {
 
             {/* Quick Actions */}
             <Card className="bg-[#0f0b14] border-white/10 p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+                <h2 className="text-xl font-bold text-white mb-4">Ações Rápidas</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Link href="/creator/series/new">
                         <div className="p-6 bg-white/5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
                             <Plus className="h-8 w-8 text-purple-400 mb-3" />
-                            <h3 className="text-white font-semibold mb-2">Create New Series</h3>
+                            <h3 className="text-white font-semibold mb-2">Criar Nova Série</h3>
                             <p className="text-white/60 text-sm">
-                                Start a new webtoon series and share your story with the world
+                                Inicie uma nova série de webtoon e compartilhe sua história com o mundo
                             </p>
                         </div>
                     </Link>
@@ -133,9 +133,9 @@ export default function CreatorHomePage() {
                     <Link href="/creator/series">
                         <div className="p-6 bg-white/5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
                             <BookOpen className="h-8 w-8 text-pink-400 mb-3" />
-                            <h3 className="text-white font-semibold mb-2">Manage Series</h3>
+                            <h3 className="text-white font-semibold mb-2">Gerenciar Séries</h3>
                             <p className="text-white/60 text-sm">
-                                Edit your existing series, add chapters, and update details
+                                Edite suas séries existentes, adicione capítulos e atualize detalhes
                             </p>
                         </div>
                     </Link>
@@ -143,9 +143,9 @@ export default function CreatorHomePage() {
                     <Link href="/creator/analytics">
                         <div className="p-6 bg-white/5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
                             <TrendingUp className="h-8 w-8 text-blue-400 mb-3" />
-                            <h3 className="text-white font-semibold mb-2">View Analytics</h3>
+                            <h3 className="text-white font-semibold mb-2">Ver Análises</h3>
                             <p className="text-white/60 text-sm">
-                                Track your series performance and audience engagement
+                                Acompanhe o desempenho da sua série e o engajamento do público
                             </p>
                         </div>
                     </Link>
@@ -154,9 +154,9 @@ export default function CreatorHomePage() {
 
             {/* Recent Activity */}
             <Card className="bg-[#0f0b14] border-white/10 p-6">
-                <h2 className="text-xl font-bold text-white mb-4">Recent Activity</h2>
+                <h2 className="text-xl font-bold text-white mb-4">Atividade Recente</h2>
                 <div className="text-white/40 text-center py-8">
-                    No recent activity to show
+                    Nenhuma atividade recente para mostrar
                 </div>
             </Card>
         </div>

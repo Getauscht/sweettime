@@ -124,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           action: 'delete_role',
           entityType: 'Role',
           entityId: id as string,
-          details: `Deleted role: ${role.name}`,
+          details: `Cargo excluído: ${role.name}`
         }
       })
 

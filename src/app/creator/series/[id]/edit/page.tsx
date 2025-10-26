@@ -142,7 +142,7 @@ export default function EditSeriesPage() {
             }))
         } catch (error) {
             console.error('Upload error:', error)
-            toast('Failed to upload images', 'error')
+            toast('Falha ao enviar imagens', 'error')
         } finally {
             setUploading(false)
         }
@@ -150,7 +150,7 @@ export default function EditSeriesPage() {
 
     const handleAddChapter = async () => {
         if (chapterForm.pages.length === 0) {
-            toast('Please provide at least one page', 'error')
+            toast('Por favor, envie ao menos uma página', 'error')
             return
         }
 
@@ -172,16 +172,16 @@ export default function EditSeriesPage() {
                 fetchChapters()
             } else {
                 const error = await response.json()
-                toast(error.error || 'Failed to create chapter', 'error')
+                toast(error.error || 'Falha ao criar capítulo', 'error')
             }
         } catch (error) {
             console.error('Error creating chapter:', error)
-            toast('Failed to create chapter', 'error')
+            toast('Falha ao criar capítulo', 'error')
         }
     }
 
     const handleDeleteChapter = async (chapterId: string) => {
-        if (!confirm('Are you sure you want to delete this chapter?')) return
+        if (!confirm('Tem certeza que deseja excluir este capítulo?')) return
 
         try {
             const response = await fetch('/api/admin/chapters', {
@@ -195,7 +195,7 @@ export default function EditSeriesPage() {
             }
         } catch (error) {
             console.error('Error deleting chapter:', error)
-            toast('Failed to delete chapter', 'error')
+            toast('Falha ao excluir capítulo', 'error')
         }
     }
 
@@ -209,7 +209,7 @@ export default function EditSeriesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-white">Loading...</div>
+                <div className="text-white">Carregando...</div>
             </div>
         )
     }
@@ -217,8 +217,8 @@ export default function EditSeriesPage() {
     if (!webtoon) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
-                <div className="text-white text-xl mb-4">Series not found</div>
-                <Button onClick={() => router.back()}>Go Back</Button>
+                <div className="text-white text-xl mb-4">Série não encontrada</div>
+                <Button onClick={() => router.back()}>Voltar</Button>
             </div>
         )
     }
@@ -233,7 +233,7 @@ export default function EditSeriesPage() {
                         className="text-white hover:bg-white/10"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to My Series
+                        Voltar para Minhas Séries
                     </Button>
                 </div>
             </div>
@@ -256,10 +256,10 @@ export default function EditSeriesPage() {
                             onChange={(e) => handleStatusChange(e.target.value)}
                             className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                         >
-                            <option value="draft">Draft</option>
-                            <option value="ongoing">Ongoing</option>
-                            <option value="completed">Completed</option>
-                            <option value="hiatus">Hiatus</option>
+                            <option value="draft">Rascunho</option>
+                            <option value="ongoing">Em andamento</option>
+                            <option value="completed">Concluído</option>
+                            <option value="hiatus">Hiato</option>
                         </select>
                     </div>
                 </div>
@@ -267,24 +267,24 @@ export default function EditSeriesPage() {
 
             <Card className="bg-[#0f0b14] border-white/10 p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white">Chapters</h2>
+                    <h2 className="text-2xl font-bold text-white">Capítulos</h2>
                     <Button
                         onClick={() => setShowAddChapter(true)}
                         className="bg-purple-600 hover:bg-purple-700 text-white"
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Chapter
+                        Adicionar Capítulo
                     </Button>
                 </div>
 
                 {chapters.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-white/40 mb-4">No chapters yet</p>
+                        <p className="text-white/40 mb-4">Nenhum capítulo ainda</p>
                         <Button
                             onClick={() => setShowAddChapter(true)}
                             className="bg-purple-600 hover:bg-purple-700 text-white"
                         >
-                            Add Your First Chapter
+                            Adicione seu primeiro capítulo
                         </Button>
                     </div>
                 ) : (
@@ -296,11 +296,11 @@ export default function EditSeriesPage() {
                             >
                                 <div>
                                     <div className="text-white font-medium">
-                                        Chapter {chapter.number}: {chapter.title}
+                                        Capítulo {chapter.number}: {chapter.title}
                                     </div>
                                     <div className="text-white/60 text-sm">
-                                        {chapter.content.length} pages
-                                        {chapter.publishedAt && ` • Published ${new Date(chapter.publishedAt).toLocaleDateString()}`}
+                                        {chapter.content.length} páginas
+                                        {chapter.publishedAt && ` • Publicado em ${new Date(chapter.publishedAt).toLocaleDateString('pt-BR')}`}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -331,12 +331,12 @@ export default function EditSeriesPage() {
                 <Dialog open={showAddChapter} onOpenChange={setShowAddChapter}>
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
                         <Card className="bg-[#0f0b14] border-white/10 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                            <h3 className="text-2xl font-bold text-white mb-6">Add New Chapter</h3>
+                            <h3 className="text-2xl font-bold text-white mb-6">Adicionar novo capítulo</h3>
 
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label className="text-white">Chapter Number</Label>
+                                        <Label className="text-white">Número do capítulo</Label>
                                         <Input
                                             type="number"
                                             value={chapterForm.number}
@@ -345,9 +345,9 @@ export default function EditSeriesPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-white">Chapter Title</Label>
+                                        <Label className="text-white">Título do capítulo</Label>
                                         <Input
-                                            placeholder="e.g., The Beginning"
+                                            placeholder="ex.: O Início"
                                             value={chapterForm.title}
                                             onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })}
                                             className="bg-white/5 border-white/10 text-white"
@@ -356,13 +356,13 @@ export default function EditSeriesPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-white">Chapter Pages</Label>
+                                    <Label className="text-white">Páginas do capítulo</Label>
                                     <div className="border-2 border-dashed border-white/10 rounded-lg p-6">
                                         <div className="text-center">
                                             <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
                                             <label className="cursor-pointer">
                                                 <span className="text-purple-400 hover:text-purple-300">
-                                                    {uploading ? 'Uploading...' : 'Upload pages'}
+                                                    {uploading ? 'Enviando...' : 'Enviar páginas'}
                                                 </span>
                                                 <input
                                                     type="file"
@@ -373,7 +373,7 @@ export default function EditSeriesPage() {
                                                     className="hidden"
                                                 />
                                             </label>
-                                            <p className="text-white/40 text-sm mt-2">Select multiple images in reading order</p>
+                                            <p className="text-white/40 text-sm mt-2">Selecione múltiplas imagens na ordem de leitura</p>
                                         </div>
                                     </div>
 
@@ -383,7 +383,7 @@ export default function EditSeriesPage() {
                                                 <div key={index} className="relative group">
                                                     <img
                                                         src={page}
-                                                        alt={`Page ${index + 1}`}
+                                                        alt={`Página ${index + 1}`}
                                                         className="w-full h-32 object-cover rounded"
                                                     />
                                                     <button
@@ -411,14 +411,14 @@ export default function EditSeriesPage() {
                                     }}
                                     className="text-white hover:bg-white/10"
                                 >
-                                    Cancel
+                                    Cancelar
                                 </Button>
                                 <Button
                                     onClick={handleAddChapter}
                                     disabled={uploading}
                                     className="bg-purple-600 hover:bg-purple-700 text-white"
                                 >
-                                    Add Chapter
+                                    Adicionar Capítulo
                                 </Button>
                             </div>
                         </Card>

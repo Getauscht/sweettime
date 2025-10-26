@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     action: 'delete_genre',
                     entityType: 'Genre',
                     entityId: id as string,
-                    details: `Deleted genre: ${genre.name}`,
+                    details: `Gênero excluído: ${genre.name}`
                 }
             })
 

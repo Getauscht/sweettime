@@ -115,11 +115,11 @@ export default function UserManagement() {
                 fetchUsers()
             } else {
                 const error = await response.json()
-                toast(error.error || 'Failed to update user', 'error')
+                toast(error.error || 'Falha ao atualizar usuário', 'error')
             }
         } catch (error) {
             console.error('Error updating user:', error)
-            toast('Failed to update user', 'error')
+            toast('Falha ao atualizar usuário', 'error')
         }
     }
 
@@ -142,7 +142,7 @@ export default function UserManagement() {
     }
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
+        if (!confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) return
 
         try {
             const response = await fetch(`/api/admin/users/${userId}`, {
@@ -153,16 +153,16 @@ export default function UserManagement() {
                 fetchUsers()
             } else {
                 const error = await response.json()
-                toast(error.error || 'Failed to delete user', 'error')
+                toast(error.error || 'Falha ao excluir usuário', 'error')
             }
         } catch (error) {
             console.error('Error deleting user:', error)
-            toast('Failed to delete user', 'error')
+            toast('Falha ao excluir usuário', 'error')
         }
     }
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
+        return new Date(dateString).toLocaleDateString('pt-BR', {
             year: 'numeric',
             month: 'short',
             day: '2-digit',
@@ -176,9 +176,9 @@ export default function UserManagement() {
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
         const diffDays = Math.floor(diffHours / 24)
 
-        if (diffHours < 1) return 'Just now'
-        if (diffHours < 24) return `${diffHours}h ago`
-        if (diffDays < 30) return `${diffDays}d ago`
+        if (diffHours < 1) return 'Agora mesmo'
+        if (diffHours < 24) return `${diffHours}h atrás`
+        if (diffDays < 30) return `${diffDays}d atrás`
         return formatDate(dateString)
     }
 
@@ -186,15 +186,15 @@ export default function UserManagement() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-white">User Management</h1>
-                <p className="text-white/60 mt-2">View, edit, suspend, or delete user accounts</p>
+                <h1 className="text-3xl font-bold text-white">Gerenciamento de Usuários</h1>
+                <p className="text-white/60 mt-2">Visualizar, editar, suspender ou excluir contas de usuários</p>
             </div>
 
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4">
                 <Input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder="Buscar usuários..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="flex-1 bg-[#0f0b14] border-white/10 text-white placeholder:text-white/40"
@@ -204,7 +204,7 @@ export default function UserManagement() {
                     onChange={(e) => setRoleFilter(e.target.value)}
                     className="px-4 py-2 bg-[#0f0b14] border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                 >
-                    <option value="">All Roles</option>
+                    <option value="">Todas as funções</option>
                     {roles.map(role => (
                         <option key={role.id} value={role.name.toLowerCase()}>{role.name}</option>
                     ))}
@@ -214,18 +214,18 @@ export default function UserManagement() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="px-4 py-2 bg-[#0f0b14] border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                 >
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="">Todos os status</option>
+                    <option value="active">Ativo</option>
+                    <option value="suspended">Suspenso</option>
                 </select>
                 <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="px-4 py-2 bg-[#0f0b14] border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                 >
-                    <option value="createdAt">Join Date</option>
-                    <option value="lastActive">Last Active</option>
-                    <option value="name">Name</option>
+                    <option value="createdAt">Data de entrada</option>
+                    <option value="lastActive">Última atividade</option>
+                    <option value="name">Nome</option>
                 </select>
             </div>
 
@@ -235,25 +235,25 @@ export default function UserManagement() {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-white/10">
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">User</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Role</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Usuário</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Função</th>
                                 <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Status</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Join Date</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Last Active</th>
-                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">Actions</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Data de entrada</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Última atividade</th>
+                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-white/40">
-                                        Loading...
+                                        Carregando...
                                     </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-white/40">
-                                        No users found
+                                        Nenhum usuário encontrado
                                     </td>
                                 </tr>
                             ) : (
@@ -275,14 +275,14 @@ export default function UserManagement() {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <div className="text-white font-medium">{user.name || 'Unnamed'}</div>
+                                                    <div className="text-white font-medium">{user.name || 'Sem nome'}</div>
                                                     <div className="text-white/60 text-sm">{user.email}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-3 py-1 bg-purple-600/20 text-purple-400 rounded-full text-sm">
-                                                {user.role?.name || 'No Role'}
+                                                {user.role?.name || 'Sem função'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -292,7 +292,7 @@ export default function UserManagement() {
                                                     : 'bg-red-500/20 text-red-400'
                                                     }`}
                                             >
-                                                {user.status}
+                                                {user.status === 'active' ? 'Ativo' : 'Suspenso'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-white/60 text-sm">{formatDate(user.createdAt)}</td>
@@ -302,21 +302,21 @@ export default function UserManagement() {
                                                 <button
                                                     onClick={() => handleEdit(user)}
                                                     className="p-2 text-white/60 hover:text-purple-400 hover:bg-white/5 rounded transition-colors"
-                                                    title="Edit user"
+                                                    title="Editar usuário"
                                                 >
                                                     <Edit className="h-4 w-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleStatusToggle(user.id, user.status)}
                                                     className="p-2 text-white/60 hover:text-yellow-400 hover:bg-white/5 rounded transition-colors"
-                                                    title={user.status === 'active' ? 'Suspend user' : 'Activate user'}
+                                                    title={user.status === 'active' ? 'Suspender usuário' : 'Ativar usuário'}
                                                 >
                                                     <Lock className="h-4 w-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(user.id)}
                                                     className="p-2 text-white/60 hover:text-red-400 hover:bg-white/5 rounded transition-colors"
-                                                    title="Delete user"
+                                                    title="Excluir usuário"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>
@@ -333,7 +333,7 @@ export default function UserManagement() {
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
                         <div className="text-sm text-white/60">
-                            Page {page} of {totalPages}
+                            Página {page} de {totalPages}
                         </div>
                         <div className="flex items-center gap-2">
                             <Button
@@ -344,7 +344,7 @@ export default function UserManagement() {
                                 className="text-white hover:bg-white/10 disabled:opacity-50"
                             >
                                 <ChevronLeft className="h-4 w-4 mr-1" />
-                                Previous
+                                Anterior
                             </Button>
                             <Button
                                 variant="ghost"
@@ -353,7 +353,7 @@ export default function UserManagement() {
                                 disabled={page >= totalPages}
                                 className="text-white hover:bg-white/10 disabled:opacity-50"
                             >
-                                Next
+                                Próximo
                                 <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
                         </div>
@@ -367,7 +367,7 @@ export default function UserManagement() {
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
                         <Card className="bg-[#0f0b14] border-white/10 p-6 max-w-md w-full">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-2xl font-bold text-white">Edit User</h3>
+                                <h3 className="text-2xl font-bold text-white">Editar usuário</h3>
                                 <button
                                     onClick={() => setEditingUser(null)}
                                     className="text-white/60 hover:text-white"
@@ -378,7 +378,7 @@ export default function UserManagement() {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-white">Name</Label>
+                                    <Label className="text-white">Nome</Label>
                                     <Input
                                         value={editForm.name}
                                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -397,13 +397,13 @@ export default function UserManagement() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-white">Role</Label>
+                                    <Label className="text-white">Função</Label>
                                     <select
                                         value={editForm.roleId}
                                         onChange={(e) => setEditForm({ ...editForm, roleId: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                                     >
-                                        <option value="">Select Role</option>
+                                        <option value="">Selecionar função</option>
                                         {roles.map(role => (
                                             <option key={role.id} value={role.id}>{role.name}</option>
                                         ))}
@@ -417,8 +417,8 @@ export default function UserManagement() {
                                         onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500"
                                     >
-                                        <option value="active">Active</option>
-                                        <option value="suspended">Suspended</option>
+                                        <option value="active">Ativo</option>
+                                        <option value="suspended">Suspenso</option>
                                     </select>
                                 </div>
                             </div>
@@ -429,13 +429,13 @@ export default function UserManagement() {
                                     onClick={() => setEditingUser(null)}
                                     className="text-white hover:bg-white/10"
                                 >
-                                    Cancel
+                                    Cancelar
                                 </Button>
                                 <Button
                                     onClick={handleSaveEdit}
                                     className="bg-purple-600 hover:bg-purple-700 text-white"
                                 >
-                                    Save Changes
+                                    Salvar Alterações
                                 </Button>
                             </div>
                         </Card>

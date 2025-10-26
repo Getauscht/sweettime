@@ -80,7 +80,7 @@ export default function Tabs({ items, value, onChange, panels, className }: Tabs
 
     return (
         <div className={className}>
-            <div ref={tabListRef} role="tablist" aria-label="Sections" className="relative">
+            <div ref={tabListRef} role="tablist" aria-label="Seções" className="relative">
                 <div className="flex justify-center gap-8 border-b border-white/5">
                     {items.map(item => (
                         <button
@@ -114,7 +114,7 @@ export default function Tabs({ items, value, onChange, panels, className }: Tabs
                             key={item.key}
                             role="region"
                             aria-hidden={!isActive}
-                            aria-label={`${item.label} panel`}
+                            aria-label={`${item.label} painel`}
                             className={`transition-opacity duration-220 transform ${reducedMotion ? '' : 'transition-transform'} ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} ${isActive ? 'block' : 'hidden'}`}
                         >
                             {panels[item.key]}

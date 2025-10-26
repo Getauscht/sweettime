@@ -397,10 +397,10 @@ export default function EditWebtoonPage() {
                                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                                 className="w-full mt-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
                             >
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                                <option value="hiatus">Hiatus</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="ongoing">Em Andamento</option>
+                                <option value="completed">Concluído</option>
+                                <option value="hiatus">Hiato</option>
+                                <option value="cancelled">Cancelado</option>
                             </select>
                         </div>
 
@@ -412,23 +412,23 @@ export default function EditWebtoonPage() {
 
                     {/* Cover image */}
                     <div>
-                        <Label className="text-white">Cover Image</Label>
+                        <Label className="text-white">Imagem de Capa</Label>
                         <div className="border-2 border-dashed border-white/10 rounded-lg p-6 mt-2">
                             {form.coverImage ? (
                                 <div className="relative">
                                     <img src={form.coverImage} alt="Cover" className="w-48 h-64 object-cover rounded-lg" />
                                     <div className="mt-3 flex gap-2">
                                         <label className="cursor-pointer px-4 py-2 bg-white/5 rounded text-white">
-                                            Change
+                                            Alterar
                                             <input type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
                                         </label>
-                                        <Button variant="ghost" onClick={() => setForm({ ...form, coverImage: '' })} className="text-white hover:bg-white/10">Remove</Button>
+                                        <Button variant="ghost" onClick={() => setForm({ ...form, coverImage: '' })} className="text-white hover:bg-white/10">Remover</Button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center">
                                     <label className="cursor-pointer px-4 py-2 bg-white/5 rounded text-purple-400">
-                                        Upload cover
+                                        Fazer upload da capa
                                         <input type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
                                     </label>
                                 </div>
@@ -438,7 +438,7 @@ export default function EditWebtoonPage() {
 
                     {/* Genres */}
                     <div>
-                        <Label className="text-white">Genres</Label>
+                        <Label className="text-white">Gêneros</Label>
                         <div className="flex flex-wrap gap-2 mt-2">
                             {genres.map((g) => (
                                 <button
@@ -455,9 +455,9 @@ export default function EditWebtoonPage() {
 
                     {/* Credits */}
                     <div>
-                        <Label className="text-white">Credits</Label>
+                        <Label className="text-white">Créditos</Label>
                         <div className="mt-2">
-                            <div className="text-white/60 text-sm mb-2">Authors</div>
+                            <div className="text-white/60 text-sm mb-2">Autores</div>
                             <div className="flex flex-wrap gap-2">
                                 {authorsList.map((a) => (
                                     <button
@@ -471,7 +471,7 @@ export default function EditWebtoonPage() {
                                 ))}
                             </div>
 
-                            <div className="text-white/60 text-sm mt-4 mb-2">Artists</div>
+                            <div className="text-white/60 text-sm mt-4 mb-2">Artistas</div>
                             <div className="flex flex-wrap gap-2">
                                 {authorsList.map((a) => (
                                     <button
@@ -488,9 +488,9 @@ export default function EditWebtoonPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
-                        <Button variant="ghost" onClick={() => router.push('/admin/webtoons')} className="text-white hover:bg-white/10">Cancel</Button>
-                        <Button onClick={handleDelete} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">Delete</Button>
-                        <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white">{saving ? 'Saving...' : 'Save Changes'}</Button>
+                        <Button variant="ghost" onClick={() => router.push('/admin/webtoons')} className="text-white hover:bg-white/10">Cancelar</Button>
+                        <Button onClick={handleDelete} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">Excluir</Button>
+                        <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white">{saving ? 'Salvando...' : 'Salvar Alterações'}</Button>
                     </div>
                 </div>
             </Card>
@@ -498,30 +498,30 @@ export default function EditWebtoonPage() {
             {/* Chapters List */}
             <Card className="bg-[#0f0b14] border-white/10">
                 <div className="p-6 border-b border-white/10">
-                    <h2 className="text-xl font-semibold text-white">Chapters</h2>
+                    <h2 className="text-xl font-semibold text-white">Capítulos</h2>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-white/10">
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Chapter</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Title</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Views</th>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Published</th>
-                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">Actions</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Capítulo</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Título</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Visualizações</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-white/60">Publicado</th>
+                                <th className="px-6 py-4 text-right text-sm font-medium text-white/60">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {chapters.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-white/40">
-                                        No chapters yet. Add your first chapter!
+                                        Nenhum capítulo ainda. Adicione seu primeiro capítulo!
                                     </td>
                                 </tr>
                             ) : (
                                 chapters.map((chapter) => (
                                     <tr key={chapter.id} className="border-b border-white/5 hover:bg-white/5">
-                                        <td className="px-6 py-4 text-white">Chapter {chapter.number}</td>
+                                        <td className="px-6 py-4 text-white">Capítulo {chapter.number}</td>
                                         <td className="px-6 py-4 text-white">{chapter.title}</td>
                                         <td className="px-6 py-4 text-white/60">{(chapter.views ?? 0).toLocaleString()}</td>
                                         <td className="px-6 py-4 text-white/60">
@@ -558,11 +558,11 @@ export default function EditWebtoonPage() {
             {showChapterModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <Card className="bg-[#0f0b14] border-white/10 w-full max-w-2xl p-6">
-                        <h2 className="text-2xl font-bold text-white mb-6">Add New Chapter</h2>
+                        <h2 className="text-2xl font-bold text-white mb-6">Adicionar Novo Capítulo</h2>
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="chapterNumber" className="text-white">Chapter Number</Label>
+                                    <Label htmlFor="chapterNumber" className="text-white">Número do Capítulo</Label>
                                     <Input
                                         id="chapterNumber"
                                         type="number"
@@ -572,7 +572,7 @@ export default function EditWebtoonPage() {
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="chapterTitle" className="text-white">Chapter Title</Label>
+                                    <Label htmlFor="chapterTitle" className="text-white">Título do Capítulo</Label>
                                     <Input
                                         id="chapterTitle"
                                         value={newChapter.title}
@@ -583,13 +583,13 @@ export default function EditWebtoonPage() {
                             </div>
 
                             <div>
-                                <Label className="text-white">Chapter Pages</Label>
+                                <Label className="text-white">Páginas do Capítulo</Label>
                                 <div className="border-2 border-dashed border-white/10 rounded-lg p-6 mt-2">
                                     <div className="text-center">
                                         <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
                                         <label className="cursor-pointer">
                                             <span className="text-purple-400 hover:text-purple-300">
-                                                {uploadingChapter ? 'Uploading...' : 'Upload chapter pages'}
+                                                {uploadingChapter ? 'Enviando...' : 'Fazer upload das páginas do capítulo'}
                                             </span>
                                             <input
                                                 type="file"
@@ -601,7 +601,7 @@ export default function EditWebtoonPage() {
                                             />
                                         </label>
                                         <p className="text-white/40 text-sm mt-2">
-                                            {newChapter.content.length} pages uploaded
+                                            {newChapter.content.length} páginas enviadas
                                         </p>
                                     </div>
                                 </div>
@@ -616,14 +616,14 @@ export default function EditWebtoonPage() {
                                     }}
                                     className="text-white hover:bg-white/10"
                                 >
-                                    Cancel
+                                    Cancelar
                                 </Button>
                                 <Button
                                     onClick={handleCreateChapter}
                                     disabled={uploadingChapter}
                                     className="bg-purple-600 hover:bg-purple-700 text-white"
                                 >
-                                    Create Chapter
+                                    Criar Capítulo
                                 </Button>
                             </div>
                         </div>

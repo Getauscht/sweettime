@@ -16,19 +16,19 @@ export interface ReaderSettings {
     pageMode: 'single' | 'double' | 'vertical-scroll' | 'horizontal-scroll'
     pageSpacing: number
     readingDirection: 'ltr' | 'rtl'
-    
+
     // Header visibility
     headerVisibility: 'hidden' | 'fixed' | 'auto-hide'
-    
+
     // Progress bar
     progressBarStyle: 'hidden' | 'light' | 'progress-bar'
     progressBarPosition: 'bottom' | 'left' | 'right'
     showPageNumberWhenHidden: boolean
-    
+
     // Behavior
     autoAdvanceChapter: boolean
     doubleClickFullscreen: boolean
-    
+
     // Keyboard shortcuts
     keyboardShortcuts: {
         scrollLeft: string[]
@@ -105,7 +105,7 @@ export default function ChapterReaderSettings({
 
         const key = e.key
         const shortcuts = { ...settings.keyboardShortcuts }
-        
+
         // Remove key from all actions
         Object.keys(shortcuts).forEach(k => {
             shortcuts[k as keyof typeof shortcuts] = shortcuts[k as keyof typeof shortcuts].filter(s => s !== key)
@@ -127,7 +127,7 @@ export default function ChapterReaderSettings({
         else if (action === 'scrollRight') shortcuts.scrollRight = shortcuts.scrollRight.filter(k => k !== key)
         else if (action === 'scrollUp') shortcuts.scrollUp = shortcuts.scrollUp.filter(k => k !== key)
         else if (action === 'scrollDown') shortcuts.scrollDown = shortcuts.scrollDown.filter(k => k !== key)
-        
+
         updateSetting('keyboardShortcuts', shortcuts)
     }
 
@@ -137,7 +137,7 @@ export default function ChapterReaderSettings({
         else if (action === 'scrollRight') shortcuts.scrollRight = defaultSettings.keyboardShortcuts.scrollRight
         else if (action === 'scrollUp') shortcuts.scrollUp = defaultSettings.keyboardShortcuts.scrollUp
         else if (action === 'scrollDown') shortcuts.scrollDown = defaultSettings.keyboardShortcuts.scrollDown
-        
+
         updateSetting('keyboardShortcuts', shortcuts)
     }
 
@@ -155,9 +155,8 @@ export default function ChapterReaderSettings({
 
             {/* Settings Sidebar */}
             <div
-                className={`fixed top-0 right-0 h-full w-96 bg-[#1a1625] border-l border-purple-600/20 transform transition-transform duration-300 z-50 overflow-y-auto ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}
+                className={`fixed top-0 right-0 h-full w-96 bg-[#1a1625] border-l border-purple-600/20 transform transition-transform duration-300 z-50 overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 <div className="p-6 space-y-6">
                     {/* Header */}
@@ -290,7 +289,7 @@ export default function ChapterReaderSettings({
                             {/* Page Style Section */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-medium text-purple-400">Estilo da Página</h3>
-                                
+
                                 <div className="space-y-2">
                                     <label className="text-sm text-white/80">Espaçamento entre páginas (px)</label>
                                     <input
@@ -348,9 +347,9 @@ export default function ChapterReaderSettings({
                                         onChange={(e) => updateSetting('progressBarPosition', e.target.value as 'bottom' | 'left' | 'right')}
                                         className="w-full bg-[#0f0b14] border border-white/10 rounded px-3 py-2 text-white"
                                     >
-                                        <option value="bottom">Bottom</option>
-                                        <option value="left">Left</option>
-                                        <option value="right">Right</option>
+                                        <option value="bottom">Inferior</option>
+                                        <option value="left">Esquerda</option>
+                                        <option value="right">Direita</option>
                                     </select>
                                 </div>
 
@@ -388,7 +387,7 @@ export default function ChapterReaderSettings({
                             {/* Image Adjustment Section */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-medium text-purple-400">Ajuste da Imagem</h3>
-                                
+
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -426,8 +425,8 @@ export default function ChapterReaderSettings({
                             <div className="space-y-4">
                                 <h3 className="text-lg font-medium text-purple-400">Atalhos do Teclado</h3>
                                 <p className="text-sm text-white/60">
-                                    Adicione um novo atalho de teclado a uma ação clicando no botão e pressionando qualquer tecla (pressione Esc para cancelar). 
-                                    Uma chave só pode ser vinculada a uma ação. Remova um atalho de teclado clicando nele. 
+                                    Adicione um novo atalho de teclado a uma ação clicando no botão e pressionando qualquer tecla (pressione Esc para cancelar).
+                                    Uma chave só pode ser vinculada a uma ação. Remova um atalho de teclado clicando nele.
                                     Redefina os atalhos de teclado de uma ação para seus padrões com o botão.
                                 </p>
 
@@ -484,7 +483,7 @@ export default function ChapterReaderSettings({
                             {/* Behavior Section */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-medium text-purple-400">Comportamento</h3>
-                                
+
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
