@@ -41,34 +41,37 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  totpEnabled   Boolean   @default(false)
-  totpSecretEncrypted String?
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  password                String?
+  image                   String?
+  totpEnabled             Boolean   @default(false)
+  totpSecretEncrypted     String?
   totpTempSecretEncrypted String?
-  totpTempExpires DateTime?
-  roleId        String?
-  status        String    @default("active") // active, suspended, banned
-  lastActive    DateTime  @default(now())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  totpTempExpires         DateTime?
+  roleId                  String?
+  status                  String    @default("active") // active, suspended, banned
+  lastActive              DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  passwordResets PasswordReset[]
-  role           Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull)
-  favorites      Favorite[]
-  follows        Follow[]
-  readingHistory ReadingHistory[]
-  comments       Comment[]
+  accounts        Account[]
+  sessions        Session[]
+  passwordResets  PasswordReset[]
+  role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  favorites       Favorite[]
+  follows         Follow[]
+  readingHistory  ReadingHistory[]
+  comments        Comment[]
   commentsMention CommentMention[]
-  commentLikes   CommentLike[]
-  commentReports CommentReport[]
-  webtoonRatings WebtoonRating[]
+  commentLikes    CommentLike[]
+  commentReports  CommentReport[]
+  webtoonRatings  WebtoonRating[]
+  // relation to group memberships
+  groupMembers    GroupMember[]
+  Invite          Invite[]
 
   @@index([roleId])
 }
@@ -112,7 +115,7 @@ model Permission {
   id          String   @id @default(cuid())
   name        String   @unique // webtoons.create, webtoons.edit, users.manage, etc
   description String?
-  category    String   // webtoons, users, authors, genres, analytics, system
+  category    String // webtoons, users, authors, genres, analytics, system
   createdAt   DateTime @default(now())
 
   rolePermissions RolePermission[]
@@ -146,14 +149,18 @@ model Webtoon {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  chapters       Chapter[]
-  genres         WebtoonGenre[]
-  favorites      Favorite[]
-  webtoonRatings WebtoonRating[]
-  readingHistory ReadingHistory[]
-  comments       Comment[]
-  credits        WebtoonCredit[]
-  author         Author[]
+  // chapters and group relation
+  chapters          Chapter[]
+  // Nullable during migration; make required in final tightening migration
+  scanlationGroupId String?
+  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
+  genres            WebtoonGenre[]
+  favorites         Favorite[]
+  webtoonRatings    WebtoonRating[]
+  readingHistory    ReadingHistory[]
+  comments          Comment[]
+  credits           WebtoonCredit[]
+  author            Author[]
 
   @@index([slug])
   @@index([status])
@@ -161,7 +168,7 @@ model Webtoon {
 
 // Per-user rating for webtoons. Rating is between 0.5 and 5.0 (inclusive), step 0.5
 model WebtoonRating {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   webtoonId String
   rating    Float
@@ -182,9 +189,13 @@ model Author {
   slug        String   @unique
   bio         String?  @db.Text
   avatar      String?
-  socialLinks Json?    // {twitter, instagram, website, etc}
+  socialLinks Json? // {twitter, instagram, website, etc}
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Optional association to a ScanlationGroup (nullable initially)
+  scanlationGroupId String?
+  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
 
   follows        Follow[]
   webtoonCredits WebtoonCredit[]
@@ -235,16 +246,20 @@ model WebtoonGenre {
 }
 
 model Chapter {
-  id         String   @id @default(cuid())
-  webtoonId  String
-  number     Int
-  title      String?
-  content    Json     // Array of image URLs or content data
-  views      Int      @default(0)
-  likes      Int      @default(0)
+  id          String   @id @default(cuid())
+  webtoonId   String
+  number      Int
+  title       String?
+  content     Json // Array of image URLs or content data
+  views       Int      @default(0)
+  likes       Int      @default(0)
   publishedAt DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Nullable group FK; will be made non-nullable or derived from webtoon in final migration
+  scanlationGroupId String?
+  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
 
   webtoon        Webtoon          @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
   readingHistory ReadingHistory[]
@@ -258,11 +273,11 @@ model Chapter {
 // Activity & Analytics
 model ActivityLog {
   id          String   @id @default(cuid())
-  action      String   // created, updated, deleted, etc
-  entityType  String   // webtoon, author, genre, user
+  action      String // created, updated, deleted, etc
+  entityType  String // webtoon, author, genre, user
   entityId    String
   details     String?  @db.Text
-  performedBy String?  // userId or "system"
+  performedBy String? // userId or "system"
   createdAt   DateTime @default(now())
 
   @@index([entityType, entityId])
@@ -274,10 +289,10 @@ model ActivityLog {
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  type      String   // new_chapter, comment, follow, admin_action, system
+  type      String // new_chapter, comment, follow, admin_action, system
   title     String
   message   String   @db.Text
-  link      String?  // URL to navigate when clicked
+  link      String? // URL to navigate when clicked
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -302,10 +317,10 @@ model Favorite {
 }
 
 model Follow {
-  id         String   @id @default(cuid())
-  userId     String
-  authorId   String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  authorId  String
+  createdAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -317,39 +332,39 @@ model Follow {
 
 // Reading History
 model ReadingHistory {
-  id          String   @id @default(cuid())
-  userId      String?  // null for anonymous users
-  sessionId   String?  // for anonymous tracking
-  webtoonId   String
-  chapterId   String
-  progress    Float    @default(0) // percentage read
-  lastReadAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String? // null for anonymous users
+  sessionId  String? // for anonymous tracking
+  webtoonId  String
+  chapterId  String
+  progress   Float    @default(0) // percentage read
+  lastReadAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  webtoon Webtoon  @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
-  chapter Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webtoon Webtoon @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, webtoonId, chapterId])
+  @@unique([sessionId, webtoonId, chapterId])
   @@index([userId])
   @@index([sessionId])
   @@index([webtoonId])
   @@index([lastReadAt])
-  @@unique([userId, webtoonId, chapterId])
-  @@unique([sessionId, webtoonId, chapterId])
 }
 
 // Comments & Mentions
 model Comment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   webtoonId String?
   chapterId String?
   parentId  String? // For nested replies
-  content   String   @db.Text
-  likes     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  content   String    @db.Text
+  likes     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
   deletedBy String? // 'owner' | 'moderator'
 
@@ -400,7 +415,7 @@ model CommentReport {
   id        String   @id @default(cuid())
   commentId String
   userId    String
-  reason    String   // harassment, spam, inappropriate, other
+  reason    String // harassment, spam, inappropriate, other
   details   String?  @db.Text
   status    String   @default("pending") // pending, reviewed, resolved, dismissed
   createdAt DateTime @default(now())
@@ -413,4 +428,64 @@ model CommentReport {
   @@index([commentId])
   @@index([userId])
   @@index([status])
+}
+
+// Scanlation / Groups
+enum GroupRole {
+  LEADER
+  MEMBER
+  UPLOADER
+}
+
+model ScanlationGroup {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  GroupMember[]
+  webtoons Webtoon[]
+  authors  Author[]
+  chapters Chapter[]
+  Invite   Invite[]
+
+  @@index([slug])
+}
+
+model GroupMember {
+  id       String    @id @default(cuid())
+  userId   String
+  groupId  String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group ScanlationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+// Add nullable FK fields to content models to allow progressive migration
+// (nullable initially; will be made required in final migration step)
+
+// Invitations for users to join ScanlationGroups
+model Invite {
+  id          String   @id @default(cuid())
+  email       String
+  token       String   @unique
+  groupId     String
+  createdById String?
+  expiresAt   DateTime
+  accepted    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  group     ScanlationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([groupId])
+  @@index([email])
 }

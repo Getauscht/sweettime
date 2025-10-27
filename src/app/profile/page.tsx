@@ -395,7 +395,7 @@ export default function ProfilePage() {
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} className="border-white/10 text-white hover:bg-white/5">Cancelar</Button>
+                            <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="text-white hover:bg-white/15">Cancelar</Button>
                             <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">{loading ? 'Salvando...' : 'Salvar Alterações'}</Button>
                         </DialogFooter>
                     </form>

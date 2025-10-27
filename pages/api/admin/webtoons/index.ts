@@ -5,7 +5,8 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { withPermission } from '@/lib/auth/middleware'
 import { authOptions } from '../../auth/[...nextauth]'
-import { PERMISSIONS } from '@/lib/auth/permissions'
+import { PERMISSIONS, hasAnyPermission } from '@/lib/auth/permissions'
+import { isUserMemberOfGroup } from '@/lib/auth/groups'
 
 export const GET = withPermission(
     PERMISSIONS.WEBTOONS_VIEW,
@@ -17,9 +18,17 @@ export const GET = withPermission(
                 // Return a single webtoon (by id or slug)
                 const webtoon = await prisma.webtoon.findFirst({
                     where: { OR: [{ id: singleId }, { slug: singleId }] },
-                    include: {
-                        credits: { include: { author: true } },
-                        genres: { include: { genre: true } },
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                        description: true,
+                        coverImage: true,
+                        status: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        credits: { select: { role: true, author: { select: { id: true, name: true, slug: true } } } },
+                        genres: { include: { genre: { select: { id: true, name: true } } } },
                         chapters: {
                             select: {
                                 id: true,
@@ -84,18 +93,18 @@ export const GET = withPermission(
                     skip: (page - 1) * limit,
                     take: limit,
                     orderBy: { createdAt: 'desc' },
-                    include: {
-                        credits: { include: { author: true } },
-                        genres: {
-                            include: {
-                                genre: true,
-                            },
-                        },
-                        _count: {
-                            select: {
-                                chapters: true,
-                            },
-                        },
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                        description: true,
+                        coverImage: true,
+                        status: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        credits: { select: { role: true, author: { select: { id: true, name: true, slug: true } } } },
+                        genres: { include: { genre: { select: { id: true, name: true } } } },
+                        _count: { select: { chapters: true } },
                     },
                 }),
                 prisma.webtoon.count({ where }),
@@ -134,6 +143,7 @@ export const POST = withPermission(
             const body = await req.json()
 
             const bodySchema = z.object({
+                scanlationGroupId: z.string().optional(),
                 title: z.string().min(1),
                 description: z.string().optional(),
                 authorIds: z.array(z.string()).min(1),
@@ -149,6 +159,7 @@ export const POST = withPermission(
             }
 
             const { title, description, authorIds, artistIds, genreIds, coverImage, status } = parsed.data
+            const { scanlationGroupId } = parsed.data as { scanlationGroupId?: string }
 
             // Generate slug
             const slug = title
@@ -158,6 +169,29 @@ export const POST = withPermission(
 
             // Use interactive transaction so we can create related records using the created webtoon id
             try {
+                // Determine which scanlationGroupId to assign (if any)
+                let assignGroupId: string | null = null
+                if (scanlationGroupId) {
+                    // If user has permission to assign groups, allow. Otherwise require membership in that group.
+                    const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+                    if (!canAssign) {
+                        const isMember = await isUserMemberOfGroup(userId, scanlationGroupId)
+                        if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the target group' }, { status: 403 })
+                    }
+                    assignGroupId = scanlationGroupId
+                } else {
+                    // If none provided, try to pick the user's first group (non-admins must belong to a group)
+                    const member = await prisma.groupMember.findFirst({ where: { userId } })
+                    if (member) assignGroupId = member.groupId
+                    else {
+                        const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+                        if (!canAssign) {
+                            return NextResponse.json({ error: 'Creators must belong to a ScanlationGroup to create webtoons' }, { status: 403 })
+                        }
+                        assignGroupId = null
+                    }
+                }
+
                 const created = await prisma.$transaction(async (tx) => {
                     const webtoon = await tx.webtoon.create({
                         data: {
@@ -166,6 +200,7 @@ export const POST = withPermission(
                             description,
                             coverImage,
                             status: status || 'ongoing',
+                            scanlationGroupId: assignGroupId,
                         },
                     })
 
@@ -247,6 +282,20 @@ export const PATCH = withPermission(
                 return NextResponse.json({ error: 'Webtoon ID required' }, { status: 400 })
             }
 
+            // Authorization: ensure user may edit this webtoon in the context of its group
+            const existing = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+            if (!existing) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
+            const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+            if (existing.scanlationGroupId && !userCanAssign) {
+                const isMember = await isUserMemberOfGroup(userId, existing.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            }
+
+            // If attempting to change assignment, require special permission
+            if (typeof updates.scanlationGroupId !== 'undefined' && !userCanAssign) {
+                return NextResponse.json({ error: 'Forbidden: cannot change scanlation group' }, { status: 403 })
+            }
+
             // Use interactive transaction to update webtoon and related records atomically
             const result = await prisma.$transaction(async (tx) => {
                 const webtoon = await tx.webtoon.update({ where: { id: webtoonId }, data: updates })
@@ -295,13 +344,16 @@ export const DELETE = withPermission(
                 )
             }
 
-            const webtoon = await prisma.webtoon.findUnique({
-                where: { id: webtoonId },
-            })
+            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true, title: true } })
+            if (!webtoon) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
 
-            await prisma.webtoon.delete({
-                where: { id: webtoonId },
-            })
+            const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+            if (webtoon.scanlationGroupId && !canAssign) {
+                const isMember = await isUserMemberOfGroup(userId, webtoon.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            }
+
+            await prisma.webtoon.delete({ where: { id: webtoonId } })
 
             // Log activity
             await prisma.activityLog.create({

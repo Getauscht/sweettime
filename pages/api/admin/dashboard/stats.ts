@@ -46,14 +46,21 @@ export const GET = withPermission(
                 },
             })
 
-            // Get top webtoons by views
+            // Get top webtoons by views (select explicit fields to avoid referencing DB columns
+            // that may not exist yet during progressive migrations)
             const topWebtoons = await prisma.webtoon.findMany({
                 take: 5,
-                orderBy: {
-                    views: 'desc',
-                },
-                include: {
-                    author: true,
+                orderBy: { views: 'desc' },
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    coverImage: true,
+                    views: true,
+                    // include minimal author info
+                    author: {
+                        select: { id: true, name: true, slug: true },
+                    },
                 },
             })
 

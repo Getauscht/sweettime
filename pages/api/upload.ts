@@ -5,6 +5,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './auth/[...nextauth]'
+import { prisma } from '@/lib/prisma'
+import { PERMISSIONS, hasAnyPermission } from '@/lib/auth/permissions'
+import { isUserMemberOfGroup } from '@/lib/auth/groups'
 import { z } from 'zod'
 
 export const config = {
@@ -56,6 +59,8 @@ export default async function handler(
         const mimeType = (file.mimetype || (file as any).mime) as string | undefined
 
         const type = Array.isArray(fields.type) ? (fields.type[0] as string) : (fields.type as string | undefined)
+        const webtoonId = Array.isArray(fields.webtoonId) ? (fields.webtoonId[0] as string) : (fields.webtoonId as string | undefined)
+        const scanlationGroupIdField = Array.isArray(fields.scanlationGroupId) ? (fields.scanlationGroupId[0] as string) : (fields.scanlationGroupId as string | undefined)
 
         // Validate 'type'
         const typeSchema = z.string().optional().refine((t) => !t || allowedTypes.includes(t), {
@@ -85,6 +90,39 @@ export default async function handler(
         // Create uploads directory if it doesn't exist
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', type || 'general')
         await fs.mkdir(uploadDir, { recursive: true })
+
+        // If this is a chapter upload, ensure the user is a member of the webtoon's group (or has upload/assign permission)
+        if (type === 'chapter') {
+            const canAssign = await hasAnyPermission(session.user.id, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
+            if (webtoonId) {
+                const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+                if (!webtoon) {
+                    if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
+                    return res.status(404).json({ error: 'Webtoon not found' })
+                }
+                if (webtoon.scanlationGroupId && !canAssign) {
+                    const isMember = await isUserMemberOfGroup(session.user.id, webtoon.scanlationGroupId)
+                    if (!isMember) {
+                        if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
+                        return res.status(403).json({ error: 'Forbidden: not a member of the webtoon\'s group' })
+                    }
+                }
+            } else if (scanlationGroupIdField) {
+                if (!canAssign) {
+                    const isMember = await isUserMemberOfGroup(session.user.id, scanlationGroupIdField)
+                    if (!isMember) {
+                        if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
+                        return res.status(403).json({ error: 'Forbidden: not a member of the target group' })
+                    }
+                }
+            } else {
+                // No webtoonId or group provided; require assign permission
+                if (!canAssign) {
+                    if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
+                    return res.status(403).json({ error: 'Forbidden: must provide webtoonId or belong to a group to upload chapter assets' })
+                }
+            }
+        }
 
         // Generate unique filename
         const timestamp = Date.now()

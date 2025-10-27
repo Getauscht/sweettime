@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { withPermission } from '@/lib/auth/middleware'
 import { authOptions } from '../../auth/[...nextauth]'
-import { PERMISSIONS } from '@/lib/auth/permissions'
+import { PERMISSIONS, hasAnyPermission } from '@/lib/auth/permissions'
+import { isUserMemberOfGroup } from '@/lib/auth/groups'
 
 export const GET = withPermission(
     PERMISSIONS.WEBTOONS_VIEW,
@@ -52,6 +53,14 @@ export const POST = withPermission(
             const existing = await prisma.chapter.findUnique({ where: { webtoonId_number: { webtoonId, number } } })
             if (existing) return NextResponse.json({ error: 'Chapter number already exists' }, { status: 400 })
 
+            // Ensure user is allowed to add chapters to this webtoon based on group membership
+            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+            if (!webtoon) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
+            const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
+            if (webtoon.scanlationGroupId && !canAssign) {
+                const isMember = await isUserMemberOfGroup(userId, webtoon.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            }
             const created = await prisma.$transaction(async (tx) => {
                 const chapter = await tx.chapter.create({ data: { webtoonId, number, title: title || `Chapter ${number}`, content: content || [] } })
                 await tx.activityLog.create({ data: { action: 'created', entityType: 'chapter', entityId: chapter.id, details: `Added chapter ${number}: '${title || ''}'`, performedBy: userId } })
@@ -76,6 +85,17 @@ export const PATCH = withPermission(
             const { chapterId, ...updates } = body
 
             if (!chapterId) return NextResponse.json({ error: 'Chapter ID required' }, { status: 400 })
+
+            // Authorization: ensure user may edit this chapter in the context of its group's membership
+            const existingChapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
+            if (!existingChapter) return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+            const parent = await prisma.webtoon.findUnique({ where: { id: existingChapter.webtoonId }, select: { id: true, scanlationGroupId: true } })
+            if (!parent) return NextResponse.json({ error: 'Parent webtoon not found' }, { status: 404 })
+            const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+            if (parent.scanlationGroupId && !userCanAssign) {
+                const isMember = await isUserMemberOfGroup(userId, parent.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            }
 
             const updated = await prisma.$transaction(async (tx) => {
                 const chapter = await tx.chapter.update({ where: { id: chapterId }, data: updates })
@@ -106,13 +126,18 @@ export const DELETE = withPermission(
                 )
             }
 
-            const chapter = await prisma.chapter.findUnique({
-                where: { id: chapterId },
-            })
+            const chapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
+            if (!chapter) return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+            const parent = await prisma.webtoon.findUnique({ where: { id: chapter.webtoonId }, select: { id: true, scanlationGroupId: true } })
+            if (!parent) return NextResponse.json({ error: 'Parent webtoon not found' }, { status: 404 })
 
-            await prisma.chapter.delete({
-                where: { id: chapterId },
-            })
+            const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
+            if (parent.scanlationGroupId && !userCanAssign) {
+                const isMember = await isUserMemberOfGroup(userId, parent.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            }
+
+            await prisma.chapter.delete({ where: { id: chapterId } })
 
             // Log activity
             await prisma.activityLog.create({

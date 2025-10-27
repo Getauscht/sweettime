@@ -15,7 +15,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         const webtoon = await prisma.webtoon.findUnique({
             where: { slug },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                status: true,
+                views: true,
+                likes: true,
+                rating: true,
+                createdAt: true,
+                updatedAt: true,
                 author: {
                     select: {
                         id: true,

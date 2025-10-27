@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
+import { isUserInAnyGroup } from '@/lib/auth/groups'
 import { Prisma } from '@prisma/client'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -35,10 +36,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Try to create an author record. If a concurrent request creates the same
             // slug we may get a P2002 unique constraint error; handle that by
             // fetching the existing author.
-            const slug = `${user.name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(2, 7)}`;
+            // Only allow auto-creation of an Author if the user belongs to at least one ScanlationGroup
+            const member = await isUserInAnyGroup(userId)
+            if (!member) {
+                // User is not in any group - do not auto-create author
+                return res.status(200).json({ webtoons: [], author: null })
+            }
+
+            const slug = `${user.name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(2, 7)}`
             try {
                 author = await prisma.author.create({
-                    data: { name: user.name, slug },
+                    data: { name: user.name, slug, // associate to one of user's groups if desired
+                        // Note: we could assign scanlationGroupId here but user may belong to many groups;
+                        // leaving scanlationGroupId null to let user set explicit group via UI/admin later.
+                    },
                 })
             } catch (e: any) {
                 if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -65,18 +76,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const webtoons = await prisma.webtoon.findMany({
             where: { credits: { some: { id: author.id } } },
             orderBy: { createdAt: 'desc' },
-            include: {
-                credits: { include: { author: true } },
-                genres: {
-                    include: {
-                        genre: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        chapters: true,
-                    },
-                },
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                views: true,
+                likes: true,
+                rating: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                credits: { select: { role: true, author: { select: { id: true, name: true, slug: true, avatar: true } } } },
+                genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+                _count: { select: { chapters: true } }
             },
         });
 
@@ -92,4 +106,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.error('Error fetching creator webtoons:', error);
         return res.status(500).json({ error: 'Failed to fetch webtoons', details: error.message });
     }
-}
+} 

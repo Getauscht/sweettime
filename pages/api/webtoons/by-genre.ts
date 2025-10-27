@@ -28,7 +28,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
             },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                coverImage: true,
+                views: true,
+                likes: true,
+                rating: true,
+                status: true,
                 credits: {
                     select: {
                         role: true,

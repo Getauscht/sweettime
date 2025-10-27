@@ -16,7 +16,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 { rating: 'desc' },
                 { views: 'desc' }
             ],
-            include: {
+            where: {
+                status: {
+                    in: ['ongoing', 'completed']
+                },
+                rating: {
+                    gte: 4.0 // Only feature highly rated webtoons
+                }
+            },
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                views: true,
+                likes: true,
+                rating: true,
+                status: true,
                 credits: {
                     select: {
                         role: true,
@@ -35,14 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         }
                     },
                     take: 3
-                }
-            },
-            where: {
-                status: {
-                    in: ['ongoing', 'completed']
-                },
-                rating: {
-                    gte: 4.0 // Only feature highly rated webtoons
                 }
             }
         })

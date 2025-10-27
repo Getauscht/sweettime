@@ -149,7 +149,7 @@ export default function GenresPage() {
                                 </div>
 
                                 <div className="flex gap-4 justify-end mt-6">
-                                    <Button variant="ghost" onClick={() => { setEditing(null); setCreating(false); }} className="text-white hover:bg-white/10">Cancelar</Button>
+                                    <Button variant="ghost" onClick={() => { setEditing(null); setCreating(false); }} className="text-white hover:bg-white/15">Cancelar</Button>
                                     <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white">{editing ? 'Salvar' : 'Criar'}</Button>
                                 </div>
                             </Card>

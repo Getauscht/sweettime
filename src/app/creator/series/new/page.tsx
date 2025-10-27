@@ -74,6 +74,7 @@ export default function CreateSeriesPage() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [allAuthors, setAllAuthors] = useState<Author[]>([])
     const [currentUserAuthor, setCurrentUserAuthor] = useState<Author | null>(null)
+    const [groups, setGroups] = useState<{ id: string; name: string }[]>([])
 
     const [formData, setFormData] = useState({
         title: '',
@@ -83,6 +84,7 @@ export default function CreateSeriesPage() {
         artistIds: [] as string[],
         coverImage: '',
         status: 'ongoing',
+        scanlationGroupId: '' as string | undefined,
     })
 
     useEffect(() => {
@@ -93,10 +95,11 @@ export default function CreateSeriesPage() {
         setLoading(true);
         try {
             // Fetch genres, all authors, and current user's author info in parallel
-            const [genresRes, authorsRes, currentUserAuthorRes] = await Promise.all([
+            const [genresRes, authorsRes, currentUserAuthorRes, groupsRes] = await Promise.all([
                 fetch('/api/admin/genres'),
                 fetch('/api/authors'),
-                fetch(`/api/creator/webtoons?time=${new Date().getTime()}`)
+                fetch(`/api/creator/webtoons?time=${new Date().getTime()}`),
+                fetch('/api/groups')
             ]);
 
             if (genresRes.ok) {
@@ -104,9 +107,19 @@ export default function CreateSeriesPage() {
                 setGenres(data.genres || []);
             }
 
+
             if (authorsRes.ok) {
                 const data = await authorsRes.json();
                 setAllAuthors(data.authors || []);
+            }
+
+            if (groupsRes?.ok) {
+                const gdata = await groupsRes.json();
+                setGroups(gdata.groups || []);
+                // Default to first group if user belongs to any
+                if ((gdata.groups || []).length > 0 && !formData.scanlationGroupId) {
+                    setFormData(prev => ({ ...prev, scanlationGroupId: gdata.groups[0].id }))
+                }
             }
 
             if (currentUserAuthorRes.ok) {
@@ -291,6 +304,18 @@ export default function CreateSeriesPage() {
                             </select>
                         </div>
                     </div>
+
+                    {groups.length > 0 && (
+                        <div className="space-y-2">
+                            <Label htmlFor="scanlationGroup" className="text-white">Scanlation Group</Label>
+                            <select id="scanlationGroup" value={formData.scanlationGroupId} onChange={(e) => setFormData({ ...formData, scanlationGroupId: e.target.value })} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-purple-500">
+                                {groups.map(g => (
+                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-white/60 text-sm">Selecione o grupo com o qual esta série estará associada. Se você não for membro de nenhum grupo, peça a um administrador para atribuí-la.</p>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label className="text-white">Imagem de Capa</Label>

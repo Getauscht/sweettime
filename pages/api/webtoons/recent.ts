@@ -12,7 +12,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const webtoons = await prisma.webtoon.findMany({
             take: parseInt(limit as string),
             orderBy: { updatedAt: 'desc' },
-            include: {
+            where: {
+                status: {
+                    in: ['ongoing', 'completed']
+                }
+            },
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                views: true,
+                likes: true,
+                rating: true,
+                status: true,
+                updatedAt: true,
                 credits: {
                     select: {
                         role: true,
@@ -41,11 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     },
                     orderBy: { publishedAt: 'desc' },
                     take: 1
-                }
-            },
-            where: {
-                status: {
-                    in: ['ongoing', 'completed']
                 }
             }
         })

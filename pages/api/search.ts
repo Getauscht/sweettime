@@ -27,7 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 status: { in: ['ongoing', 'completed'] }
             },
             take: Math.min(20, take),
-            include: {
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                rating: true,
+                views: true,
                 credits: {
                     select: {
                         role: true,

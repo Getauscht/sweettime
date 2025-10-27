@@ -44,6 +44,15 @@ export const PERMISSIONS = {
     SYSTEM_SETTINGS: 'system.settings',
     SYSTEM_LOGS: 'system.logs',
 
+    // Groups / Scanlation
+    GROUPS_VIEW: 'groups.view',
+    GROUPS_CREATE: 'groups.create',
+    GROUPS_EDIT: 'groups.edit',
+    GROUPS_DELETE: 'groups.delete',
+    GROUPS_MANAGE_MEMBERS: 'groups.manage_members',
+    GROUPS_UPLOAD: 'groups.upload',
+    GROUPS_ASSIGN: 'groups.assign',
+
     // Comments
     COMMENTS_VIEW: 'comments.view',
     COMMENTS_MODERATE: 'comments.moderate',
@@ -72,6 +81,8 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.USERS_VIEW,
             PERMISSIONS.USERS_SUSPEND,
             PERMISSIONS.ANALYTICS_VIEW,
+            PERMISSIONS.GROUPS_VIEW,
+            PERMISSIONS.GROUPS_MANAGE_MEMBERS,
         ],
     },
     AUTHOR: {
@@ -83,6 +94,8 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.WEBTOONS_EDIT,
             PERMISSIONS.AUTHORS_VIEW,
             PERMISSIONS.GENRES_VIEW,
+            PERMISSIONS.GROUPS_VIEW,
+            PERMISSIONS.GROUPS_UPLOAD,
         ],
     },
     READER: {
@@ -92,6 +105,7 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.WEBTOONS_VIEW,
             PERMISSIONS.AUTHORS_VIEW,
             PERMISSIONS.GENRES_VIEW,
+            PERMISSIONS.GROUPS_VIEW,
         ],
     },
 }

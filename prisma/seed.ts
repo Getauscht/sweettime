@@ -32,6 +32,30 @@ async function main() {
         console.log(`✅ Admin user created: ${adminUser.email}`)
     }
 
+    // Ensure admin-legacy ScanlationGroup exists and admin user is a leader
+    console.log('👥 Ensuring admin-legacy scanlation group...')
+    const adminUserForGroup = await prisma.user.findUnique({ where: { email: 'admin@storyverse.com' } })
+    let adminLegacyGroup = await prisma.scanlationGroup.findUnique({ where: { slug: 'admin-legacy' } })
+    if (!adminLegacyGroup) {
+        adminLegacyGroup = await prisma.scanlationGroup.create({
+            data: {
+                name: 'Admin / Legacy Import',
+                slug: 'admin-legacy',
+                description: 'Group used to import legacy content and act as admin-owned fallbacks',
+            },
+        })
+        console.log('✅ Created admin-legacy group')
+    }
+
+    if (adminUserForGroup) {
+        await prisma.groupMember.upsert({
+            where: { userId_groupId: { userId: adminUserForGroup.id, groupId: adminLegacyGroup.id } },
+            update: { role: 'LEADER' },
+            create: { userId: adminUserForGroup.id, groupId: adminLegacyGroup.id, role: 'LEADER' },
+        })
+        console.log('✅ Admin user attached to admin-legacy group as LEADER')
+    }
+
     // Create sample authors
     console.log('👥 Creating sample authors...')
     const authors = await Promise.all([
@@ -100,6 +124,8 @@ async function main() {
             views: 125000,
             likes: 12500,
             rating: 4.8,
+            // associate to admin-legacy group by default for samples
+            scanlationGroupId: adminLegacyGroup?.id,
         },
     })
 
@@ -114,6 +140,7 @@ async function main() {
             views: 89000,
             likes: 8900,
             rating: 4.6,
+            scanlationGroupId: adminLegacyGroup?.id,
         },
     })
 
@@ -147,6 +174,7 @@ async function main() {
                 content: JSON.stringify([]),
                 views: 5000,
                 likes: 450,
+                scanlationGroupId: adminLegacyGroup?.id,
             },
             {
                 webtoonId: webtoon1.id,
@@ -155,10 +183,20 @@ async function main() {
                 content: JSON.stringify([]),
                 views: 4500,
                 likes: 420,
+                scanlationGroupId: adminLegacyGroup?.id,
             },
         ],
         skipDuplicates: true,
     })
+
+    // Backfill any existing webtoons/chapters/authors with null scanlationGroupId to adminLegacyGroup
+    console.log('🔁 Backfilling existing records to admin-legacy group where missing...')
+    if (adminLegacyGroup) {
+        await prisma.webtoon.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
+        await prisma.chapter.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
+        await prisma.author.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
+        console.log('✅ Backfill completed')
+    }
 
     // Create activity log
     await prisma.activityLog.createMany({

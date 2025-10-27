@@ -21,7 +21,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     { id: webtoonId }
                 ]
             },
-            include: {
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                coverImage: true,
+                status: true,
+                views: true,
+                likes: true,
+                rating: true,
+                createdAt: true,
+                updatedAt: true,
                 genres: {
                     include: {
                         genre: {

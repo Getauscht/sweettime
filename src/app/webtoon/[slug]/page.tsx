@@ -139,7 +139,8 @@ export default function WebtoonPage() {
         if (!showRatingSelector) return
 
         const onDocClick = (e: MouseEvent) => {
-            const path = (e.composedPath && (e as any).composedPath()) || (e as any).path || []
+            const maybeComposed = (e as any).composedPath
+            const path = (typeof maybeComposed === 'function' ? maybeComposed.call(e) : (e as any).path) || []
             if (ratingRef.current && !path.includes(ratingRef.current)) {
                 setShowRatingSelector(false)
             }

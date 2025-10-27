@@ -488,7 +488,7 @@ export default function EditWebtoonPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
-                        <Button variant="ghost" onClick={() => router.push('/admin/webtoons')} className="text-white hover:bg-white/10">Cancelar</Button>
+                        <Button variant="ghost" onClick={() => router.push('/admin/webtoons')} className="text-white hover:bg-white/15">Cancelar</Button>
                         <Button onClick={handleDelete} variant="destructive" className="bg-red-600 hover:bg-red-700 text-white">Excluir</Button>
                         <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700 text-white">{saving ? 'Salvando...' : 'Salvar Alterações'}</Button>
                     </div>
