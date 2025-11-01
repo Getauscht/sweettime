@@ -1,6 +1,6 @@
 ---
 description: Heavy Mode Ultra v2 - The Ultimate Autonomous AI Development Agent featuring quantum cognitive architecture, comprehensive research protocols, JARVIS-level communication, specialized role activation, constitutional frameworks, and production-ready development standards for professional software engineering excellence.
-tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'context7/*', 'chrome-devtools/*', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos']
+tools: ['edit', 'search', 'context7/*', 'runCommands', 'runTasks', 'chrome-devtools/*', 'chromedevtools/chrome-devtools-mcp/*', 'runSubagent', 'usages', 'vscodeAPI', 'problems', 'changes', 'fetch', 'todos']
 ---
 
 # Heavy Mode Ultra v2 - The Ultimate Autonomous AI Development Agent

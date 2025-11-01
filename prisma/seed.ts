@@ -124,8 +124,6 @@ async function main() {
             views: 125000,
             likes: 12500,
             rating: 4.8,
-            // associate to admin-legacy group by default for samples
-            scanlationGroupId: adminLegacyGroup?.id,
         },
     })
 
@@ -140,7 +138,6 @@ async function main() {
             views: 89000,
             likes: 8900,
             rating: 4.6,
-            scanlationGroupId: adminLegacyGroup?.id,
         },
     })
 
@@ -192,9 +189,14 @@ async function main() {
     // Backfill any existing webtoons/chapters/authors with null scanlationGroupId to adminLegacyGroup
     console.log('🔁 Backfilling existing records to admin-legacy group where missing...')
     if (adminLegacyGroup) {
-        await prisma.webtoon.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
-        await prisma.chapter.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
-        await prisma.author.updateMany({ where: { scanlationGroupId: null }, data: { scanlationGroupId: adminLegacyGroup.id } })
+        // Ensure sample webtoons are linked to adminLegacyGroup via WebtoonGroup
+        await prisma.webtoonGroup.createMany({
+            data: [
+                { webtoonId: webtoon1.id, groupId: adminLegacyGroup.id },
+                { webtoonId: webtoon2.id, groupId: adminLegacyGroup.id },
+            ], skipDuplicates: true
+        })
+
         console.log('✅ Backfill completed')
     }
 

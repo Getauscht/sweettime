@@ -144,7 +144,7 @@ export default function Home() {
     <>
       <Header />
       <div className="min-h-screen bg-[#1a1625]">
-        {/* Featured Carousel */}
+        {/* Carrossel de Destaques */}
         {featuredWebtoons.length > 0 && (
           <div className="relative h-[500px] overflow-hidden">
             {featuredWebtoons.map((webtoon, index) => (
@@ -199,10 +199,6 @@ export default function Home() {
                       <Button
                         variant="outline"
                         onClick={() => router.push(`/webtoon/${webtoon.slug}`)}
-                        // ensure the outline button stays transparent on dark banner
-                        // the shared "outline" variant adds a bg class from the design system
-                        // so we explicitly force a transparent background here and keep
-                        // the white border/text to match the banner's color pattern.
                         className="bg-transparent border-white/20 text-white hover:bg-white/10"
                       >
                         Ver Detalhes
@@ -213,7 +209,7 @@ export default function Home() {
               </div>
             ))}
 
-            {/* Navigation Buttons */}
+            {/* Botões de Navegação */}
             {featuredWebtoons.length > 1 && (
               <>
                 <button
@@ -229,7 +225,7 @@ export default function Home() {
                   <ChevronRight className="h-6 w-6 text-white" />
                 </button>
 
-                {/* Indicators */}
+                {/* Indicadores */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
                   {featuredWebtoons.map((_, index) => (
                     <button
@@ -245,7 +241,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Recently Updated */}
+        {/* Atualizados Recentemente */}
         <section className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -259,7 +255,7 @@ export default function Home() {
               {recentlyUpdated.map((webtoon) => (
                 <Link
                   key={webtoon.id}
-                  href={`/webtoon/${webtoon.slug}`}
+                  href={`/webtoon/${webtoon.slug}/chapter/${webtoon.latestChapter || 1}`}
                   className="group"
                 >
                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 bg-white/5">
@@ -293,11 +289,11 @@ export default function Home() {
           )}
         </section>
 
-        {/* Browse by Genre */}
+        {/* Explorar por Gênero */}
         <section className="container mx-auto px-4 py-12">
           <h2 className="text-2xl font-bold text-white mb-6">Explorar por Gênero</h2>
 
-          {/* Genre Tabs */}
+          {/* Abas de Gênero */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
             {genres.map((genre) => (
               <button
@@ -313,7 +309,7 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Genre Webtoons */}
+          {/* Webtoons do Gênero */}
           {genreWebtoons.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {genreWebtoons.map((webtoon) => (

@@ -34,9 +34,9 @@ export default function SearchPage() {
     const [popular, setPopular] = useState<Webtoon[]>([])
     const [loading, setLoading] = useState(false)
     const [selectedFilters, setSelectedFilters] = useState({
-        genre: 'All',
-        author: 'All',
-        status: 'All'
+        genre: 'Todos',
+        author: 'Todos',
+        status: 'Todos'
     })
 
     useEffect(() => {

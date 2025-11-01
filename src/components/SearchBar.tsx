@@ -30,7 +30,24 @@ type GenreResult = {
     slug: string
 }
 
-type ResultItem = WebtoonResult | AuthorResult | GenreResult
+type UserResult = {
+    type: 'user'
+    id: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+}
+
+type GroupResult = {
+    type: 'group'
+    id: string
+    name: string
+    slug?: string
+    description?: string | null
+    _count?: { members?: number; webtoonGroups?: number }
+}
+
+type ResultItem = WebtoonResult | AuthorResult | GenreResult | UserResult | GroupResult
 
 interface SearchBarProps {
     onClose?: () => void
@@ -76,6 +93,12 @@ export default function SearchBar({ onClose, autoFocus = false }: SearchBarProps
                 }
                 if (Array.isArray(data.genres)) {
                     combined.push(...data.genres.map((g: any) => ({ ...g, type: 'genre' })))
+                }
+                if (Array.isArray(data.users)) {
+                    combined.push(...data.users.map((u: any) => ({ ...u, type: 'user' })))
+                }
+                if (Array.isArray(data.groups)) {
+                    combined.push(...data.groups.map((g: any) => ({ ...g, type: 'group' })))
                 }
 
                 setResults(combined)
@@ -142,6 +165,10 @@ export default function SearchBar({ onClose, autoFocus = false }: SearchBarProps
         } else if ((result as GenreResult).type === 'genre') {
             // route to search filtered by genre
             router.push(`/search?q=${encodeURIComponent((result as GenreResult).name)}`)
+        } else if ((result as UserResult).type === 'user') {
+            router.push(`/profile/${(result as UserResult).id}`)
+        } else if ((result as GroupResult).type === 'group') {
+            router.push(`/groups/${(result as GroupResult).id}`)
         }
 
         setIsOpen(false)
@@ -191,7 +218,7 @@ export default function SearchBar({ onClose, autoFocus = false }: SearchBarProps
                                 className={`flex items-center gap-3 p-3 cursor-pointer border-b border-white/5 last:border-0 transition-colors ${isSelected ? 'bg-purple-600/20' : 'hover:bg-white/5'}`}
                             >
                                 <div className="w-10 h-14 rounded bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0 text-2xl">
-                                    {result.type === 'webtoon' ? '📚' : result.type === 'author' ? '👤' : '#'}
+                                    {result.type === 'webtoon' ? '📚' : result.type === 'author' ? '👤' : result.type === 'user' ? '🧑' : result.type === 'group' ? '🛡️' : '#'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     {result.type === 'webtoon' && (
@@ -200,6 +227,20 @@ export default function SearchBar({ onClose, autoFocus = false }: SearchBarProps
                                             <div className="text-xs text-white/60">
                                                 Por {(result as WebtoonResult).authors?.map(a => a.name).join(', ') || 'Desconhecido'} • {(result as WebtoonResult).genres?.join(', ') || ''}
                                             </div>
+                                        </>
+                                    )}
+
+                                    {result.type === 'user' && (
+                                        <>
+                                            <div className="font-medium truncate text-white">{(result as UserResult).name || (result as UserResult).email || 'Usuário'}</div>
+                                            <div className="text-xs text-white/60">Usuário</div>
+                                        </>
+                                    )}
+
+                                    {result.type === 'group' && (
+                                        <>
+                                            <div className="font-medium truncate text-white">{(result as GroupResult).name}</div>
+                                            <div className="text-xs text-white/60">Grupo • {(result as GroupResult)._count?.members || 0} membros</div>
                                         </>
                                     )}
 

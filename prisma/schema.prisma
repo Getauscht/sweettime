@@ -149,18 +149,16 @@ model Webtoon {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // chapters and group relation
-  chapters          Chapter[]
-  // Nullable during migration; make required in final tightening migration
-  scanlationGroupId String?
-  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
-  genres            WebtoonGenre[]
-  favorites         Favorite[]
-  webtoonRatings    WebtoonRating[]
-  readingHistory    ReadingHistory[]
-  comments          Comment[]
-  credits           WebtoonCredit[]
-  author            Author[]
+  // chapters and relations
+  chapters       Chapter[]
+  webtoonGroups  WebtoonGroup[] // Many-to-many with ScanlationGroups (optional)
+  genres         WebtoonGenre[]
+  favorites      Favorite[]
+  webtoonRatings WebtoonRating[]
+  readingHistory ReadingHistory[]
+  comments       Comment[]
+  credits        WebtoonCredit[]
+  author         Author[]
 
   @@index([slug])
   @@index([status])
@@ -192,10 +190,6 @@ model Author {
   socialLinks Json? // {twitter, instagram, website, etc}
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // Optional association to a ScanlationGroup (nullable initially)
-  scanlationGroupId String?
-  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
 
   follows        Follow[]
   webtoonCredits WebtoonCredit[]
@@ -257,9 +251,9 @@ model Chapter {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Nullable group FK; will be made non-nullable or derived from webtoon in final migration
-  scanlationGroupId String?
-  scanlationGroup   ScanlationGroup? @relation(fields: [scanlationGroupId], references: [id], onDelete: SetNull)
+  // Required scanlationGroupId - chapters are created by groups
+  scanlationGroupId String
+  scanlationGroup   ScanlationGroup @relation(fields: [scanlationGroupId], references: [id], onDelete: Restrict)
 
   webtoon        Webtoon          @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
   readingHistory ReadingHistory[]
@@ -268,6 +262,7 @@ model Chapter {
   @@unique([webtoonId, number])
   @@index([webtoonId])
   @@index([publishedAt])
+  @@index([scanlationGroupId])
 }
 
 // Activity & Analytics
@@ -442,16 +437,32 @@ model ScanlationGroup {
   name        String
   slug        String   @unique
   description String?  @db.Text
+  socialLinks Json? // { x, discord, facebook, instagram, website }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  GroupMember[]
-  webtoons Webtoon[]
-  authors  Author[]
-  chapters Chapter[]
-  Invite   Invite[]
+  members       GroupMember[]
+  webtoonGroups WebtoonGroup[] // Many-to-many with Webtoons (optional)
+  chapters      Chapter[]
+  Invite        Invite[]
 
   @@index([slug])
+}
+
+// Many-to-many relationship between Webtoons and ScanlationGroups
+// Tracks which groups have claimed/are working on which webtoons
+model WebtoonGroup {
+  id        String   @id @default(cuid())
+  webtoonId String
+  groupId   String
+  claimedAt DateTime @default(now())
+
+  webtoon Webtoon         @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  group   ScanlationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([webtoonId, groupId])
+  @@index([webtoonId])
+  @@index([groupId])
 }
 
 model GroupMember {

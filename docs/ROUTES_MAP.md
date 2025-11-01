@@ -30,17 +30,22 @@
 | `/profile` | Perfil do usuário com edição | ✅ |
 | `/dashboard` | Dashboard do usuário | ✅ |
 
-## ✍️ Creator Studio
+## 📚 Gerenciamento de Webtoons
 
-| Rota | Descrição | Requer Permissão |
-|------|-----------|------------------|
-| `/creator` | Dashboard do criador | `content.create` |
-| `/creator/series` | Minhas séries | `content.create` |
-| `/creator/series/new` | Criar nova série | `content.create` |
-| `/creator/series/[id]/edit` | Editar série | `content.update` |
-| `/creator/analytics` | Analytics das obras | `content.view` |
-| `/creator/community` | Comunidade/comentários | `content.view` |
-| `/creator/settings` | Configurações de criador | `content.create` |
+| Rota | Descrição | Requer Auth | Requer Grupo |
+|------|-----------|-------------|---------------|
+| `/webtoons` | Minhas obras | ✅ | ✅ |
+| `/webtoons/new` | Criar nova obra | ✅ | ✅ |
+| `/webtoons/[id]/edit` | Editar obra e capítulos | ✅ | ✅ |
+
+## 👥 Grupos de Scanlation
+
+| Rota | Descrição | Requer Auth |
+|------|-----------|-------------|
+| `/groups` | Lista de grupos | ✅ (membros) |
+| `/groups/new` | Criar novo grupo | ✅ |
+| `/groups/[id]` | Detalhes do grupo | ✅ |
+| `/groups/[id]/members` | Gerenciar membros | ✅ (líder) |
 
 ## 🛡️ Admin Panel
 
@@ -148,25 +153,36 @@
 
 ---
 
-## 🛠️ APIs Creator
+## � APIs de Gerenciamento de Webtoons
 
-### Webtoons
-| Endpoint | Método | Descrição | Permissão |
-|----------|--------|-----------|-----------|
-| `/api/creator/webtoons` | GET | Lista webtoons do criador | `content.view` |
-| `/api/creator/webtoons` | POST | Criar novo webtoon | `content.create` |
-| `/api/creator/webtoons/[id]` | GET | Detalhes do webtoon | `content.view` |
-| `/api/creator/webtoons/[id]` | PATCH | Atualizar webtoon | `content.update` |
-| `/api/creator/webtoons/[id]` | DELETE | Deletar webtoon | `content.delete` |
+### Webtoons (Não vinculados a grupos)
+| Endpoint | Método | Descrição | Auth | Requer Grupo |
+|----------|--------|-----------|------|--------------|
+| `/api/webtoons` | GET | Lista webtoons do usuário | ✅ | ✅ |
+| `/api/webtoons` | POST | Criar novo webtoon | ✅ | ✅ |
+| `/api/webtoons/[id]` | GET | Detalhes do webtoon | ✅ | ✅ |
+| `/api/webtoons/[id]` | PATCH | Atualizar webtoon | ✅ | ✅ |
+| `/api/webtoons/[id]` | DELETE | Deletar webtoon | ✅ | ✅ |
 
-### Capítulos
-| Endpoint | Método | Descrição | Permissão |
-|----------|--------|-----------|-----------|
-| `/api/creator/webtoons/[webtoonId]/chapters` | GET | Lista capítulos | `content.view` |
-| `/api/creator/webtoons/[webtoonId]/chapters` | POST | Criar capítulo | `content.create` |
-| `/api/creator/webtoons/[webtoonId]/chapters/[id]` | GET | Detalhes do capítulo | `content.view` |
-| `/api/creator/webtoons/[webtoonId]/chapters/[id]` | PATCH | Atualizar capítulo | `content.update` |
-| `/api/creator/webtoons/[webtoonId]/chapters/[id]` | DELETE | Deletar capítulo | `content.delete` |
+### Capítulos (Vinculados a grupos)
+| Endpoint | Método | Descrição | Auth | Requer Grupo |
+|----------|--------|-----------|------|--------------|
+| `/api/webtoons/[webtoonId]/chapters` | POST | Criar capítulo (vinculado a grupo) | ✅ | ✅ |
+| `/api/webtoons/[webtoonId]/chapters/[id]` | DELETE | Deletar capítulo (apenas grupo criador) | ✅ | ✅ |
+
+### Grupos
+| Endpoint | Método | Descrição | Auth |
+|----------|--------|-----------|------|
+| `/api/groups` | GET | Lista grupos do usuário | ✅ |
+| `/api/groups` | POST | Criar novo grupo | ✅ |
+| `/api/groups/[id]` | GET | Detalhes do grupo | ✅ |
+| `/api/groups/[id]` | PATCH | Atualizar grupo (apenas líder) | ✅ |
+| `/api/groups/[id]` | DELETE | Deletar grupo (apenas líder) | ✅ |
+| `/api/groups/[id]/members` | GET | Lista membros | ✅ |
+| `/api/groups/[id]/members` | POST | Adicionar membro | ✅ |
+| `/api/groups/[id]/members/[userId]` | DELETE | Remover membro | ✅ |
+| `/api/groups/[id]/invites` | GET | Lista convites | ✅ |
+| `/api/groups/[id]/invites` | POST | Criar convite | ✅ |
 
 ---
 
@@ -291,7 +307,7 @@
 - `PasswordReset` - Tokens de reset de senha
 
 ### RBAC
-- `Role` - Papéis (Admin, Creator, User)
+- `Role` - Papéis (Admin, Moderator, Reader)
 - `Permission` - Permissões individuais
 - `RolePermission` - Relação many-to-many
 
@@ -352,12 +368,13 @@
 3. Comentar → Pode mencionar usuários com @
 4. Mencionado → Recebe notificação
 
-### Criação de Conteúdo
-1. Creator Studio → Criar série
-2. Upload de capa
-3. Criar capítulos com markdown
-4. Publicar
-5. Acompanhar analytics
+### Criação de Conteúdo (Grupo)
+1. Criar/ingressar em grupo
+2. Ir para `/webtoons` → Criar série
+3. Upload de capa
+4. Criar capítulos (vinculados ao grupo)
+5. Publicar
+6. Acompanhar estatísticas
 
 ### Administração
 1. Admin Panel → Ver dashboard

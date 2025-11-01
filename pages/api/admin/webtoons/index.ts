@@ -39,6 +39,7 @@ export const GET = withPermission(
                             },
                             orderBy: { number: 'asc' },
                         },
+                        webtoonGroups: { include: { group: { select: { id: true, name: true } } } },
                         _count: { select: { chapters: true } },
                     },
                 })
@@ -67,6 +68,7 @@ export const GET = withPermission(
                         publishedAt: c.publishedAt,
                         createdAt: (c as any).createdAt || new Date(),
                     })),
+                    webtoonGroups: webtoon.webtoonGroups || [],
                 }
 
                 return NextResponse.json({ webtoon: response })
@@ -169,10 +171,10 @@ export const POST = withPermission(
 
             // Use interactive transaction so we can create related records using the created webtoon id
             try {
-                // Determine which scanlationGroupId to assign (if any)
+                // Determine which group (if any) should be associated with this webtoon.
+                // We no longer store a direct `scanlationGroupId` on Webtoon; instead we create a WebtoonGroup entry.
                 let assignGroupId: string | null = null
                 if (scanlationGroupId) {
-                    // If user has permission to assign groups, allow. Otherwise require membership in that group.
                     const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
                     if (!canAssign) {
                         const isMember = await isUserMemberOfGroup(userId, scanlationGroupId)
@@ -180,15 +182,17 @@ export const POST = withPermission(
                     }
                     assignGroupId = scanlationGroupId
                 } else {
-                    // If none provided, try to pick the user's first group (non-admins must belong to a group)
+                    // If none provided, try to pick the user's first group membership
                     const member = await prisma.groupMember.findFirst({ where: { userId } })
                     if (member) assignGroupId = member.groupId
                     else {
                         const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
                         if (!canAssign) {
-                            return NextResponse.json({ error: 'Creators must belong to a ScanlationGroup to create webtoons' }, { status: 403 })
+                            // Authors can create webtoons without a group
+                            assignGroupId = null
+                        } else {
+                            assignGroupId = null
                         }
-                        assignGroupId = null
                     }
                 }
 
@@ -200,7 +204,6 @@ export const POST = withPermission(
                             description,
                             coverImage,
                             status: status || 'ongoing',
-                            scanlationGroupId: assignGroupId,
                         },
                     })
 
@@ -216,6 +219,15 @@ export const POST = withPermission(
 
                     if (genreIds && genreIds.length > 0) {
                         await tx.webtoonGenre.createMany({ data: genreIds.map((genreId: string) => ({ webtoonId: webtoon.id, genreId })) })
+                    }
+
+                    // If a group assignment was requested, create the WebtoonGroup link
+                    if (assignGroupId) {
+                        try {
+                            await tx.webtoonGroup.create({ data: { webtoonId: webtoon.id, groupId: assignGroupId } })
+                        } catch (e) {
+                            // ignore duplicate or other errors here; conflict will be surfaced if needed
+                        }
                     }
 
                     await tx.activityLog.create({
@@ -282,13 +294,20 @@ export const PATCH = withPermission(
                 return NextResponse.json({ error: 'Webtoon ID required' }, { status: 400 })
             }
 
-            // Authorization: ensure user may edit this webtoon in the context of its group
-            const existing = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+            // Authorization: ensure user may edit this webtoon in the context of any group that has claimed it
+            const existing = await prisma.webtoon.findUnique({ where: { id: webtoonId }, include: { webtoonGroups: true } })
             if (!existing) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
             const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
-            if (existing.scanlationGroupId && !userCanAssign) {
-                const isMember = await isUserMemberOfGroup(userId, existing.scanlationGroupId)
-                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            if ((existing.webtoonGroups || []).length > 0 && !userCanAssign) {
+                // require membership in at least one of the groups that claimed this webtoon
+                let allowed = false
+                for (const wg of existing.webtoonGroups) {
+                    if (await isUserMemberOfGroup(userId, wg.groupId)) {
+                        allowed = true
+                        break
+                    }
+                }
+                if (!allowed) return NextResponse.json({ error: 'Forbidden: not a member of any group managing this webtoon' }, { status: 403 })
             }
 
             // If attempting to change assignment, require special permission
@@ -344,13 +363,17 @@ export const DELETE = withPermission(
                 )
             }
 
-            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true, title: true } })
+            // Deleting: ensure user belongs to at least one group that manages this webtoon unless they have assign permission
+            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, include: { webtoonGroups: true } })
             if (!webtoon) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
 
             const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
-            if (webtoon.scanlationGroupId && !canAssign) {
-                const isMember = await isUserMemberOfGroup(userId, webtoon.scanlationGroupId)
-                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            if ((webtoon.webtoonGroups || []).length > 0 && !canAssign) {
+                let allowed = false
+                for (const wg of webtoon.webtoonGroups) {
+                    if (await isUserMemberOfGroup(userId, wg.groupId)) { allowed = true; break }
+                }
+                if (!allowed) return NextResponse.json({ error: 'Forbidden: not a member of any group managing this webtoon' }, { status: 403 })
             }
 
             await prisma.webtoon.delete({ where: { id: webtoonId } })

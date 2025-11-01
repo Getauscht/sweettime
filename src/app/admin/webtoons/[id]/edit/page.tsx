@@ -37,6 +37,10 @@ export default function EditWebtoonPage() {
     })
     const [chapters, setChapters] = useState<Chapter[]>([])
     const [showChapterModal, setShowChapterModal] = useState(false)
+    const [showClaimModal, setShowClaimModal] = useState(false)
+    const [groupsForClaim, setGroupsForClaim] = useState<{ id: string; name: string }[]>([])
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+    const [claiming, setClaiming] = useState(false)
     const [newChapter, setNewChapter] = useState({
         number: '',
         title: '',
@@ -351,6 +355,26 @@ export default function EditWebtoonPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add Chapter
                 </Button>
+                <Button
+                    variant="outline"
+                    onClick={async () => {
+                        // open claim modal and fetch groups
+                        setShowClaimModal(true)
+                        try {
+                            const res = await fetch('/api/groups')
+                            if (res.ok) {
+                                const data = await res.json()
+                                setGroupsForClaim(data.groups || [])
+                            }
+                        } catch (e) {
+                            console.error('Failed to load groups for claim', e)
+                            showToast('Failed to load groups', 'error')
+                        }
+                    }}
+                    className="ml-2 text-white border-white/20 hover:bg-white/5"
+                >
+                    Claim to Group
+                </Button>
             </div>
 
             {/* Webtoon Info */}
@@ -625,6 +649,56 @@ export default function EditWebtoonPage() {
                                 >
                                     Criar Capítulo
                                 </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+            {/* Claim Modal */}
+            {showClaimModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="bg-[#0f0b14] border-white/10 w-full max-w-md p-6">
+                        <h2 className="text-2xl font-bold text-white mb-4">Claim Webtoon to Group</h2>
+                        <p className="text-white/60 mb-4">Pick the group that should claim/manage this webtoon. Only group leaders or users with permissions can perform this action.</p>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="text-white">Select Group</Label>
+                                <select value={selectedGroupId || ''} onChange={(e) => setSelectedGroupId(e.target.value)} className="w-full mt-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white">
+                                    <option value="">-- Select a group --</option>
+                                    {groupsForClaim.map(g => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-4 justify-end pt-2">
+                                <Button variant="ghost" onClick={() => { setShowClaimModal(false); setSelectedGroupId(null) }} className="text-white hover:bg-white/10">Cancel</Button>
+                                <Button onClick={async () => {
+                                    if (!selectedGroupId) { showToast('Select a group first', 'error'); return }
+                                    setClaiming(true)
+                                    try {
+                                        const res = await fetch('/api/admin/webtoons/claim', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ webtoonId: id, groupId: selectedGroupId }),
+                                        })
+                                        if (res.ok) {
+                                            const data = await res.json()
+                                            showToast('Webtoon claimed successfully', 'success')
+                                            setShowClaimModal(false)
+                                            setSelectedGroupId(null)
+                                            fetchWebtoon()
+                                        } else {
+                                            const err = await res.json().catch(() => ({}))
+                                            showToast(err.error || 'Failed to claim webtoon', 'error')
+                                        }
+                                    } catch (err) {
+                                        console.error('Claim error', err)
+                                        showToast('Failed to claim webtoon', 'error')
+                                    } finally {
+                                        setClaiming(false)
+                                    }
+                                }} className="bg-purple-600 hover:bg-purple-700 text-white">{claiming ? 'Claiming...' : 'Claim'}</Button>
                             </div>
                         </div>
                     </Card>

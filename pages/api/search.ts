@@ -67,6 +67,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             take: Math.min(10, take)
         })
 
+        // Search users (by name or email)
+        const users: any[] = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { name: { contains: q } },
+                    { email: { contains: q } }
+                ]
+            },
+            take: Math.min(10, take),
+            select: { id: true, name: true, email: true, image: true }
+        })
+
+        // Search scanlation groups (scans)
+        const groups: any[] = await prisma.scanlationGroup.findMany({
+            where: {
+                OR: [
+                    { name: { contains: q } },
+                    { slug: { contains: q } },
+                    { description: { contains: q } }
+                ]
+            },
+            take: Math.min(10, take),
+            include: { _count: { select: { members: true, webtoonGroups: true } } }
+        })
+
         const formattedWebtoons = webtoons.map((w: any) => ({
             id: w.id,
             title: w.title,
@@ -79,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             views: w.views
         }))
 
-        return res.status(200).json({ webtoons: formattedWebtoons, authors, genres })
+        return res.status(200).json({ webtoons: formattedWebtoons, authors, genres, users, groups })
     } catch (error) {
         console.error('Error performing search:', error)
         return res.status(500).json({ error: 'Failed to perform search' })

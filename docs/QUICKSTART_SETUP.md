@@ -174,12 +174,13 @@ Deve:
 - ✅ Estatísticas (usuários, webtoons, etc.)
 - ✅ Menu lateral com opções
 
-### 4. Testar Creator Studio
-Acesse: http://localhost:3000/creator
+### 4. Testar Webtoons Management
+Acesse: http://localhost:3000/webtoons
 
 Deve:
-- ✅ Mostrar dashboard do criador
-- ✅ Opção de criar nova série
+- ✅ Mostrar lista de webtoons do usuário
+- ✅ Opção de criar novo webtoon
+- ✅ Acesso protegido para membros de grupos
 
 ### 5. Testar Leitura de Webtoon
 1. Na homepage, clique em um webtoon
@@ -351,7 +352,6 @@ mkdir -p public/uploads/cover
 ```
 
 ---
-
 ## 📊 Dados de Teste
 
 ### Criar usuário de teste:
@@ -359,37 +359,30 @@ mkdir -p public/uploads/cover
 2. Preencha o formulário
 3. Faça login
 
-### Criar webtoon de teste (como Creator):
-1. Faça login como criador
-2. Vá para: http://localhost:3000/creator/series/new
-3. Preencha o formulário
+### Criar grupo de teste:
+1. Faça login
+2. Vá para: http://localhost:3000/groups/new
+3. Preencha nome e descrição
+4. Salve
+
+### Criar webtoon de teste (como membro de grupo):
+1. Faça login como membro de um grupo
+2. Vá para: http://localhost:3000/webtoons/new
+3. Preencha o formulário (título, descrição, status, gêneros)
 4. Upload de capa
 5. Salve
 
 ### Criar capítulo de teste:
-1. Vá para a série criada
-2. Clique em "Novo Capítulo"
-3. Preencha título e conteúdo (pode usar Markdown)
-4. Salve
+1. Vá para a série criada em `/webtoons/[id]/edit`
+2. Clique em "Add Chapter"
+3. Preencha número, título e selecione grupos
+4. Faça upload das páginas
+5. Salve
 
-**Exemplo de conteúdo em Markdown:**
-```markdown
-# Título do Capítulo
-
-Este é um parágrafo de exemplo.
-
-## Subtítulo
-
-- Item 1
-- Item 2
-- Item 3
-
-**Texto em negrito** e *itálico*.
-
-> Uma citação interessante
-
-![Imagem](https://via.placeholder.com/800x400)
-```
+**Exemplo de upload de capítulo:**
+- Use múltiplas imagens (PNG/JPG)
+- Serão convertidas automaticamente para WebP
+- Ordem de upload = ordem de leitura
 
 ---
 

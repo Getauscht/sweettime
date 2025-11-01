@@ -95,16 +95,20 @@ export default async function handler(
         if (type === 'chapter') {
             const canAssign = await hasAnyPermission(session.user.id, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
             if (webtoonId) {
-                const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+                const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, include: { webtoonGroups: true } })
                 if (!webtoon) {
                     if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
                     return res.status(404).json({ error: 'Webtoon not found' })
                 }
-                if (webtoon.scanlationGroupId && !canAssign) {
-                    const isMember = await isUserMemberOfGroup(session.user.id, webtoon.scanlationGroupId)
-                    if (!isMember) {
+                if ((webtoon.webtoonGroups || []).length > 0 && !canAssign) {
+                    // require membership in at least one of the groups that claimed this webtoon
+                    let allowed = false
+                    for (const wg of webtoon.webtoonGroups) {
+                        if (await isUserMemberOfGroup(session.user.id, wg.groupId)) { allowed = true; break }
+                    }
+                    if (!allowed) {
                         if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
-                        return res.status(403).json({ error: 'Forbidden: not a member of the webtoon\'s group' })
+                        return res.status(403).json({ error: 'Forbidden: not a member of any group managing this webtoon' })
                     }
                 }
             } else if (scanlationGroupIdField) {

@@ -199,7 +199,7 @@ export default function ProfilePage() {
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="pt-12 flex flex-col items-center text-center">
                         <Avatar className="h-36 w-36 border-2 border-purple-600/40">
-                            <AvatarImage src={profileData.image || ''} alt={profileData.name ? `${profileData.name} avatar` : 'User avatar'} />
+                            <AvatarImage src={profileData.image || ''} alt={profileData.name ? `${profileData.name} avatar` : 'Avatar do usuário'} />
                             <AvatarFallback aria-hidden="true" className="bg-purple-600 text-white text-4xl">
                                 {profileData.name?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
@@ -280,13 +280,13 @@ export default function ProfilePage() {
                                                     </div>
 
                                                     <div className="flex items-center gap-3">
-                                                        {!n.isRead && <button aria-label={`Mark notification ${n.title} as read`} onClick={async () => {
+                                                        {!n.isRead && <button aria-label={`Marcar notificação ${n.title} como lida`} onClick={async () => {
                                                             try {
                                                                 await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationId: n.id }) })
                                                                 setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x))
                                                             } catch (e) { }
                                                         }} className="text-white/60">✓</button>}
-                                                        <button aria-label={`Delete notification ${n.title}`} onClick={async () => {
+                                                        <button aria-label={`Excluir notificação ${n.title}`} onClick={async () => {
                                                             try {
                                                                 await fetch('/api/notifications', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationId: n.id }) })
                                                                 setNotifications(prev => prev.filter(x => x.id !== n.id))

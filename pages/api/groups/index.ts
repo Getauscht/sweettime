@@ -11,19 +11,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
             // If user is authenticated, return groups they belong to; otherwise return recent public groups
             const userId = (session?.user as any)?.id
+            const ownOnly = req.query.own === 'true'
+
             if (userId) {
                 const groups = await prisma.scanlationGroup.findMany({
                     where: { members: { some: { userId } } },
-                    include: { _count: { select: { members: true, webtoons: true } } },
+                    include: { _count: { select: { members: true, webtoonGroups: true } } },
                     orderBy: { createdAt: 'desc' },
                 })
                 return res.status(200).json({ groups })
             }
 
+            if (ownOnly && !userId) {
+                return res.status(401).json({ error: 'Unauthorized' })
+            }
+
             const groups = await prisma.scanlationGroup.findMany({
                 take: 50,
                 orderBy: { createdAt: 'desc' },
-                include: { _count: { select: { members: true, webtoons: true } } },
+                include: { _count: { select: { members: true, webtoonGroups: true } } },
             })
 
             return res.status(200).json({ groups })
@@ -38,19 +44,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
         try {
-            const { name, slug, description } = req.body as { name?: string; slug?: string; description?: string }
+            const { name, slug, description, socialLinks } = req.body as { name?: string; slug?: string; description?: string; socialLinks?: any }
             if (!name || typeof name !== 'string') return res.status(400).json({ error: 'Name is required' })
 
             const safeSlug = slug && typeof slug === 'string' && slug.trim() !== '' ? slug.trim() : `${name.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(2, 8)}`
 
-            const group = await prisma.scanlationGroup.create({
-                data: {
-                    name: name.trim(),
-                    slug: safeSlug,
-                    description: description ?? undefined,
-                    members: { create: { userId, role: 'LEADER' } },
-                },
-            })
+            const createData: any = {
+                name: name.trim(),
+                slug: safeSlug,
+                description: description ?? undefined,
+                members: { create: { userId, role: 'LEADER' } },
+            }
+            if (socialLinks && typeof socialLinks === 'object') createData.socialLinks = socialLinks
+
+            const group = await prisma.scanlationGroup.create({ data: createData })
 
             return res.status(201).json({ group })
         } catch (err: any) {

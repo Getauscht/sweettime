@@ -53,16 +53,36 @@ export const POST = withPermission(
             const existing = await prisma.chapter.findUnique({ where: { webtoonId_number: { webtoonId, number } } })
             if (existing) return NextResponse.json({ error: 'Chapter number already exists' }, { status: 400 })
 
-            // Ensure user is allowed to add chapters to this webtoon based on group membership
-            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, select: { id: true, scanlationGroupId: true } })
+            // Ensure user is allowed to add chapters to this webtoon and determine scanlationGroupId for the chapter
+            const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, include: { webtoonGroups: true } })
             if (!webtoon) return NextResponse.json({ error: 'Webtoon not found' }, { status: 404 })
-            const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
-            if (webtoon.scanlationGroupId && !canAssign) {
-                const isMember = await isUserMemberOfGroup(userId, webtoon.scanlationGroupId)
-                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+
+            const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN, PERMISSIONS.WEBTOONS_MANAGE])
+
+            // Determine group to set on chapter
+            let chapterGroupId: string | null = null
+            if ((webtoon.webtoonGroups || []).length > 0) {
+                // If webtoon is claimed by groups, user must be member of one of those groups (unless canAssign)
+                if (!canAssign) {
+                    let found = false
+                    for (const wg of webtoon.webtoonGroups) {
+                        if (await isUserMemberOfGroup(userId, wg.groupId)) { chapterGroupId = wg.groupId; found = true; break }
+                    }
+                    if (!found) return NextResponse.json({ error: 'Forbidden: not a member of any group managing this webtoon' }, { status: 403 })
+                } else {
+                    // privileged users can set to their own group if they wish; pick first membership if exists
+                    const member = await prisma.groupMember.findFirst({ where: { userId } })
+                    if (member) chapterGroupId = member.groupId
+                }
+            } else {
+                // If webtoon has no claiming groups, use user's group membership for chapter (uploaders must belong to a group)
+                const member = await prisma.groupMember.findFirst({ where: { userId } })
+                if (!member && !canAssign) return NextResponse.json({ error: 'Creators must belong to a ScanlationGroup to create chapters' }, { status: 403 })
+                chapterGroupId = member?.groupId || null
             }
+
             const created = await prisma.$transaction(async (tx) => {
-                const chapter = await tx.chapter.create({ data: { webtoonId, number, title: title || `Chapter ${number}`, content: content || [] } })
+                const chapter = await tx.chapter.create({ data: { webtoonId, number, title: title || `Chapter ${number}`, content: content || [], scanlationGroupId: chapterGroupId! } })
                 await tx.activityLog.create({ data: { action: 'created', entityType: 'chapter', entityId: chapter.id, details: `Added chapter ${number}: '${title || ''}'`, performedBy: userId } })
                 return chapter
             })
@@ -89,12 +109,11 @@ export const PATCH = withPermission(
             // Authorization: ensure user may edit this chapter in the context of its group's membership
             const existingChapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
             if (!existingChapter) return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
-            const parent = await prisma.webtoon.findUnique({ where: { id: existingChapter.webtoonId }, select: { id: true, scanlationGroupId: true } })
-            if (!parent) return NextResponse.json({ error: 'Parent webtoon not found' }, { status: 404 })
+
             const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
-            if (parent.scanlationGroupId && !userCanAssign) {
-                const isMember = await isUserMemberOfGroup(userId, parent.scanlationGroupId)
-                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            if (existingChapter.scanlationGroupId && !userCanAssign) {
+                const isMember = await isUserMemberOfGroup(userId, existingChapter.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the chapter\'s group' }, { status: 403 })
             }
 
             const updated = await prisma.$transaction(async (tx) => {
@@ -128,13 +147,11 @@ export const DELETE = withPermission(
 
             const chapter = await prisma.chapter.findUnique({ where: { id: chapterId } })
             if (!chapter) return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
-            const parent = await prisma.webtoon.findUnique({ where: { id: chapter.webtoonId }, select: { id: true, scanlationGroupId: true } })
-            if (!parent) return NextResponse.json({ error: 'Parent webtoon not found' }, { status: 404 })
 
             const userCanAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_ASSIGN])
-            if (parent.scanlationGroupId && !userCanAssign) {
-                const isMember = await isUserMemberOfGroup(userId, parent.scanlationGroupId)
-                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the webtoon\'s group' }, { status: 403 })
+            if (chapter.scanlationGroupId && !userCanAssign) {
+                const isMember = await isUserMemberOfGroup(userId, chapter.scanlationGroupId)
+                if (!isMember) return NextResponse.json({ error: 'Forbidden: not a member of the chapter\'s group' }, { status: 403 })
             }
 
             await prisma.chapter.delete({ where: { id: chapterId } })

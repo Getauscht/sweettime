@@ -44,6 +44,10 @@ interface Webtoon {
         views: number
         likes: number
         publishedAt: string
+        scanlationGroup?: {
+            id: string
+            name: string
+        }
     }>
     totalChapters: number
     allChapters: Array<{
@@ -52,6 +56,10 @@ interface Webtoon {
         title: string
         publishedAt: string
         views: number
+        scanlationGroup?: {
+            id: string
+            name: string
+        }
     }>
 }
 
@@ -477,6 +485,14 @@ export default function WebtoonPage() {
                                                 <Eye className="h-3 w-3" />
                                                 {chapter.views.toLocaleString()}
                                             </span>
+                                            {chapter.scanlationGroup && (
+                                                <span className="flex items-center gap-1">
+                                                    <span className="text-xs text-gray-400">•</span>
+                                                    <Link href={`/groups/${chapter.scanlationGroup.id}/view`} className="text-sm text-gray-300 hover:text-purple-300">
+                                                        {chapter.scanlationGroup.name}
+                                                    </Link>
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

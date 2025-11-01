@@ -8,12 +8,11 @@ export const PERMISSIONS = {
     WEBTOONS_EDIT: 'webtoons.edit',
     WEBTOONS_DELETE: 'webtoons.delete',
     WEBTOONS_PUBLISH: 'webtoons.publish',
+    WEBTOONS_MANAGE: 'webtoons.manage', // For group members to manage webtoons
 
     // Authors
+    // Note: Authors are now created by group members, not by a specific role
     AUTHORS_VIEW: 'authors.view',
-    AUTHORS_CREATE: 'authors.create',
-    AUTHORS_EDIT: 'authors.edit',
-    AUTHORS_DELETE: 'authors.delete',
 
     // Genres
     GENRES_VIEW: 'genres.view',
@@ -74,8 +73,8 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.WEBTOONS_VIEW,
             PERMISSIONS.WEBTOONS_EDIT,
             PERMISSIONS.WEBTOONS_DELETE,
+            PERMISSIONS.WEBTOONS_MANAGE,
             PERMISSIONS.AUTHORS_VIEW,
-            PERMISSIONS.AUTHORS_EDIT,
             PERMISSIONS.GENRES_VIEW,
             PERMISSIONS.GENRES_EDIT,
             PERMISSIONS.USERS_VIEW,
@@ -83,19 +82,6 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.ANALYTICS_VIEW,
             PERMISSIONS.GROUPS_VIEW,
             PERMISSIONS.GROUPS_MANAGE_MEMBERS,
-        ],
-    },
-    AUTHOR: {
-        name: 'author',
-        description: 'Can create and manage own webtoons',
-        permissions: [
-            PERMISSIONS.WEBTOONS_VIEW,
-            PERMISSIONS.WEBTOONS_CREATE,
-            PERMISSIONS.WEBTOONS_EDIT,
-            PERMISSIONS.AUTHORS_VIEW,
-            PERMISSIONS.GENRES_VIEW,
-            PERMISSIONS.GROUPS_VIEW,
-            PERMISSIONS.GROUPS_UPLOAD,
         ],
     },
     READER: {

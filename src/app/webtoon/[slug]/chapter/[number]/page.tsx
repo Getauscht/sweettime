@@ -408,7 +408,7 @@ export default function ChapterPage() {
                         <div className="flex items-center justify-between">
                             {navigation?.prev ? (
                                 <Link href={`/webtoon/${chapter.webtoon.slug}/chapter/${navigation.prev.number}`}>
-                                    <Button variant="outline" className="gap-2 border-purple-600/20 text-white hover:bg-purple-600/20 hover:text-purple-400">
+                                    <Button variant="ghost" className="gap-2 bg-white/5 text-white hover:bg-purple-600/20 hover:text-purple-400">
                                         <ChevronLeft className="h-4 w-4" />
                                         Capítulo Anterior
                                     </Button>
@@ -418,7 +418,7 @@ export default function ChapterPage() {
                             )}
 
                             <Link href={`/webtoon/${chapter.webtoon.slug}`}>
-                                <Button variant="outline" className="border-purple-600/20 text-white hover:bg-purple-600/20 hover:text-purple-400">
+                                <Button variant="ghost" className="bg-white/5 text-white hover:bg-purple-600/20 hover:text-purple-400">
                                     <List className="h-4 w-4 mr-2" />
                                     Todos os Capítulos
                                 </Button>
@@ -426,7 +426,7 @@ export default function ChapterPage() {
 
                             {navigation?.next ? (
                                 <Link href={`/webtoon/${chapter.webtoon.slug}/chapter/${navigation.next.number}`}>
-                                    <Button variant="outline" className="gap-2 border-purple-600/20 text-white hover:bg-purple-600/20 hover:text-purple-400">
+                                    <Button variant="ghost" className="gap-2 bg-white/5 text-white hover:bg-purple-600/20 hover:text-purple-400">
                                         Próximo Capítulo
                                         <ChevronRight className="h-4 w-4" />
                                     </Button>

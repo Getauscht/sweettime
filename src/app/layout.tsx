@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SweetTime - Authentication",
+  title: "SweetTime - Autenticação",
   description: "Sistema de autenticação com Next.js, NextAuth e MySQL",
 };
 

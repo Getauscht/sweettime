@@ -5,9 +5,10 @@ import { Prisma } from '@prisma/client'
 export async function runConcurrencyTest() {
     console.log('Starting reading-history concurrency test')
 
-    // Setup: create webtoon, chapter
+    // Setup: create webtoon, group, chapter
     const webtoon = await prisma.webtoon.create({ data: { title: `test-webtoon-${Date.now()}`, slug: `test-webtoon-${Date.now()}-${Math.random().toString(36).substring(2, 8)}` } })
-    const chapter = await prisma.chapter.create({ data: { webtoonId: webtoon.id, number: 1, content: [] as any } })
+    const group = await prisma.scanlationGroup.create({ data: { name: `test-group-${Date.now()}`, slug: `test-group-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`, description: 'temp group for tests' } })
+    const chapter = await prisma.chapter.create({ data: { webtoonId: webtoon.id, number: 1, content: [] as any, scanlationGroupId: group.id } })
 
     const sessionId = uuidv4()
     const userId = null
@@ -64,6 +65,7 @@ export async function runConcurrencyTest() {
     // cleanup
     await prisma.readingHistory.deleteMany({ where: { webtoonId: webtoon.id } })
     await prisma.chapter.delete({ where: { id: chapter.id } })
+    await prisma.scanlationGroup.delete({ where: { id: group.id } })
     await prisma.webtoon.delete({ where: { id: webtoon.id } })
 }
 
