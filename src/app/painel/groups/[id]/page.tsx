@@ -289,9 +289,9 @@ export default function GroupDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {group.webtoons && group.webtoons.length > 0 ? (
                         group.webtoons.map((w) => (
-                            <Link key={w.id} href={`/webtoon/${w.slug}`}>
+                            <Link key={w.id} href={`/obra/${w.slug}`}>
                                 <Card className="p-4 bg-[#0f0b14] border-white/5 hover:border-purple-500/30 transition-colors group cursor-pointer">
-                                    <div className="aspect-[3/4] bg-white/5 rounded mb-3 flex items-center justify-center">
+                                    <div className="aspect-[16/9] bg-white/5 rounded mb-3 flex items-center justify-center">
                                         {w.cover ? (
                                             <img
                                                 src={w.cover}

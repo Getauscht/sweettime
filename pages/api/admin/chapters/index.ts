@@ -13,19 +13,22 @@ export const GET = withPermission(
         try {
             const { searchParams } = new URL(req.url)
             const webtoonId = searchParams.get('webtoonId')
+            const novelId = searchParams.get('novelId')
 
-            if (!webtoonId) {
+            if (!webtoonId && !novelId) {
                 return NextResponse.json(
-                    { error: 'Webtoon ID required' },
+                    { error: 'webtoonId or novelId required' },
                     { status: 400 }
                 )
             }
 
-            const chapters = await prisma.chapter.findMany({
-                where: { webtoonId },
-                orderBy: { number: 'asc' },
-            })
+            if (webtoonId) {
+                const chapters = await prisma.chapter.findMany({ where: { webtoonId }, orderBy: { number: 'asc' } })
+                return NextResponse.json({ chapters })
+            }
 
+            const nid = novelId as string
+            const chapters = await prisma.novelChapter.findMany({ where: { novelId: nid }, orderBy: { number: 'asc' } })
             return NextResponse.json({ chapters })
         } catch (error) {
             console.error('Error fetching chapters:', error)
@@ -40,11 +43,44 @@ export const GET = withPermission(
 
 export const POST = withPermission(
     PERMISSIONS.WEBTOONS_EDIT,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const body = await req.json()
+            // Accept either webtoonId (create image chapter) or novelId (create markdown/text chapter)
+            const common = { ...body, number: typeof body.number === 'string' ? parseInt(body.number) : body.number }
+
+            if (common.novelId) {
+                const schema = z.object({ novelId: z.string().min(1), number: z.number().int().positive(), title: z.string().optional(), content: z.any().optional() })
+                const parsed = schema.safeParse(common)
+                if (!parsed.success) return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 })
+
+                const { novelId, number, title, content } = parsed.data
+
+                // Check if chapter number already exists for novel
+                const existing = await prisma.novelChapter.findUnique({ where: { novelId_number: { novelId, number } } })
+                if (existing) return NextResponse.json({ error: 'Chapter number already exists' }, { status: 400 })
+
+                // Determine scanlation group for novel chapter: prefer user's group membership, fall back to admin-legacy
+                let chapterGroupId: string | null = null
+                const member = await prisma.groupMember.findFirst({ where: { userId } })
+                if (member) chapterGroupId = member.groupId
+                if (!chapterGroupId) {
+                    const adminLegacy = await prisma.scanlationGroup.findUnique({ where: { slug: 'admin-legacy' } })
+                    chapterGroupId = adminLegacy?.id || null
+                }
+                if (!chapterGroupId) return NextResponse.json({ error: 'No scanlation group available to assign to chapter' }, { status: 400 })
+
+                const created = await prisma.$transaction(async (tx) => {
+                    const chapter = await tx.novelChapter.create({ data: { novelId, number, title: title || `Chapter ${number}`, content: typeof content === 'string' ? content : (content || ''), scanlationGroupId: chapterGroupId } })
+                    await tx.activityLog.create({ data: { action: 'created', entityType: 'novel_chapter', entityId: chapter.id, details: `Added novel chapter ${number}: '${title || ''}'`, performedBy: userId } })
+                    return chapter
+                })
+
+                return NextResponse.json({ chapter: created })
+            }
+
             const schema = z.object({ webtoonId: z.string().min(1), number: z.number().int().positive(), title: z.string().optional(), content: z.any().optional() })
-            const parsed = schema.safeParse({ ...body, number: typeof body.number === 'string' ? parseInt(body.number) : body.number })
+            const parsed = schema.safeParse(common)
             if (!parsed.success) return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 })
 
             const { webtoonId, number, title, content } = parsed.data
@@ -98,7 +134,7 @@ export const POST = withPermission(
 
 export const PATCH = withPermission(
     PERMISSIONS.WEBTOONS_EDIT,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const body = await req.json()
             const schema = z.object({ chapterId: z.string().min(1), updates: z.record(z.string(), z.any()).optional() })
@@ -133,7 +169,7 @@ export const PATCH = withPermission(
 
 export const DELETE = withPermission(
     PERMISSIONS.WEBTOONS_DELETE,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const { searchParams } = new URL(req.url)
             const chapterId = searchParams.get('chapterId')

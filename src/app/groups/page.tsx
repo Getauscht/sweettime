@@ -80,7 +80,7 @@ export default function GroupsIndexPage() {
                                                 <div className="w-12 h-12 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xl">📚</div>
                                                 <div>
                                                     <div className="text-white font-medium">{g.name}</div>
-                                                    <div className="text-sm text-white/60">{g._count?.members || 0} membros • {g._count?.webtoonGroups || 0} webtoons</div>
+                                                    <div className="text-sm text-white/60">{g._count?.members || 0} membros • {g._count?.webtoons || 0} ou {g._count?.webtoonGroups || 0} webtoons</div>
                                                 </div>
                                             </div>
                                             <div>

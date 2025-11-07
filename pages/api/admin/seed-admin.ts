@@ -23,6 +23,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
+    // Safety: prevent accidental admin seeding in production. Require SEED_ADMIN_KEY header when NODE_ENV=production.
+    if (process.env.NODE_ENV === 'production') {
+        const seedKey = process.env.SEED_ADMIN_KEY
+        const provided = (req.headers['x-seed-admin-key'] as string) || ''
+
+        if (!seedKey) {
+            return res.status(403).json({ error: 'Forbidden', message: 'Seed endpoint disabled in production' })
+        }
+
+        if (!provided || provided !== seedKey) {
+            return res.status(403).json({ error: 'Forbidden', message: 'Invalid or missing seed key' })
+        }
+    }
+
     try {
         const body = req.body || {}
 

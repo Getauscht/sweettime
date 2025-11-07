@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
         // Only admins can create genres
-        if (!isAdminSession(session)) {
+        if (!(await isAdminSession(session))) {
             return res.status(403).json({ error: 'Forbidden' })
         }
 

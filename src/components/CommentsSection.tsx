@@ -37,6 +37,8 @@ interface Comment {
 interface Props {
     webtoonId?: string
     chapterId?: string
+    novelId?: string
+    novelChapterId?: string
 }
 
 /**
@@ -45,7 +47,7 @@ interface Props {
  * - Allows authenticated users to post comments (mentions optional)
  * - Designed to be used on both webtoon page (webtoon-level comments) and chapter page (chapter-level comments)
  */
-export default function CommentsSection({ webtoonId, chapterId }: Props) {
+export default function CommentsSection({ webtoonId, chapterId, novelId, novelChapterId }: Props) {
     const { data: session } = useSession()
     const currentUser = session?.user as { id?: string; name?: string | null; image?: string | null } | undefined
     const isCurrentUser = (userId?: string | null) => {
@@ -418,6 +420,8 @@ export default function CommentsSection({ webtoonId, chapterId }: Props) {
         const params = new URLSearchParams()
         if (chapterId) params.set('chapterId', chapterId)
         else if (webtoonId) params.set('webtoonId', webtoonId)
+        if (novelChapterId) params.set('novelChapterId', novelChapterId)
+        else if (novelId) params.set('novelId', novelId)
         return params.toString() ? `?${params.toString()}` : ''
     }
 
@@ -606,6 +610,8 @@ export default function CommentsSection({ webtoonId, chapterId }: Props) {
                 body: JSON.stringify({
                     webtoonId: webtoonId || undefined,
                     chapterId: chapterId || undefined,
+                    novelId: novelId || undefined,
+                    novelChapterId: novelChapterId || undefined,
                     content: newComment,
                     mentions
                 })

@@ -60,7 +60,7 @@ export default function GenresPage() {
                 toast(error.error, 'error')
             }
         } catch (error) {
-            toast('Failed to save genre', 'error')
+            toast('Falha ao salvar gênero', 'error')
         }
     }
 
@@ -132,7 +132,7 @@ export default function GenresPage() {
                         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
                             <Card className="bg-[#0f0b14] border-white/10 p-6 max-w-md w-full">
                                 <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-2xl font-bold text-white">{editing ? 'Editar' : 'Nova'} Gênero</h3>
+                                    <h3 className="text-2xl font-bold text-white">{editing ? 'Editar' : 'Novo'} Gênero</h3>
                                     <button onClick={() => { setEditing(null); setCreating(false); }} className="text-white/60 hover:text-white"><X className="h-5 w-5" /></button>
                                 </div>
 

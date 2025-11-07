@@ -202,7 +202,7 @@ export default function LibraryPage() {
                             readingHistory.map((item) => (
                                 <Link
                                     key={item.id}
-                                    href={`/webtoon/${item.webtoon.slug}/chapter/${item.chapter.number}`}
+                                    href={`/obra/${item.webtoon.slug}/chapter/${item.chapter.number}`}
                                     className="block p-4 bg-[#1a1625] hover:bg-purple-600/10 rounded-lg transition-colors border border-purple-600/20"
                                 >
                                     <div className="flex items-center gap-4">
@@ -256,7 +256,7 @@ export default function LibraryPage() {
                             favorites.map((fav) => (
                                 <Link
                                     key={fav.id}
-                                    href={`/webtoon/${fav.webtoon.slug}`}
+                                    href={`/obra/${fav.webtoon.slug}`}
                                     className="group"
                                 >
                                     <div className="bg-[#1a1625] rounded-lg overflow-hidden border border-purple-600/20 hover:border-purple-600/50 transition-all">

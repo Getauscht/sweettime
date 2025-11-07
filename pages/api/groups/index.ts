@@ -16,7 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (userId) {
                 const groups = await prisma.scanlationGroup.findMany({
                     where: { members: { some: { userId } } },
-                    include: { _count: { select: { members: true, webtoonGroups: true } } },
+                    include: { 
+                        _count: { 
+                            select: { 
+                                members: true, 
+                                webtoonGroups: true,
+                                novelGroups: true 
+                            } 
+                        } 
+                    },
                     orderBy: { createdAt: 'desc' },
                 })
                 return res.status(200).json({ groups })
@@ -29,7 +37,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const groups = await prisma.scanlationGroup.findMany({
                 take: 50,
                 orderBy: { createdAt: 'desc' },
-                include: { _count: { select: { members: true, webtoonGroups: true } } },
+                include: { 
+                    _count: { 
+                        select: { 
+                            members: true, 
+                            webtoonGroups: true,
+                            novelGroups: true 
+                        } 
+                    } 
+                },
             })
 
             return res.status(200).json({ groups })

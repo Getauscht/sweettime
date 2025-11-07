@@ -25,7 +25,8 @@ export default async function handler(
     }
 
     // Allowed upload types and accepted mime prefixes
-    const allowedTypes = ['cover', 'avatar', 'chapter', 'general']
+    // Added 'logo' and 'favicon' for admin-managed branding assets
+    const allowedTypes = ['cover', 'banner', 'avatar', 'chapter', 'general', 'logo', 'favicon']
     const allowedMimePrefixes = ['image/']
 
     try {
@@ -72,6 +73,15 @@ export default async function handler(
             // cleanup temp if present
             if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
             return res.status(400).json({ error: typeParse.error.issues[0].message })
+        }
+
+        // If this is a branding asset, require settings manage permission
+        if (type === 'logo' || type === 'favicon') {
+            const canManageSettings = await hasAnyPermission(session.user.id, [PERMISSIONS.SETTINGS_MANAGE])
+            if (!canManageSettings) {
+                if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
+                return res.status(403).json({ error: 'Forbidden: insufficient permissions to upload branding assets' })
+            }
         }
 
         // Validate mime type if available
@@ -136,13 +146,26 @@ export default async function handler(
 
         // Convert to WebP and save, ensure cleanup on error
         try {
-            await sharp(tempPath)
-                .webp({ quality: 85 })
-                .resize(type === 'cover' ? 600 : type === 'avatar' ? 400 : 1200, null, {
-                    fit: 'inside',
-                    withoutEnlargement: true,
-                })
-                .toFile(outPath)
+            // Special handling for banners: enforce a 16:9 output by cropping to cover
+            const transformer = sharp(tempPath)
+
+            if (type === 'banner') {
+                // Resize & crop to 1600x900 (16:9) to guarantee banner aspect ratio
+                await transformer.webp({ quality: 85 }).resize(1600, 900, { fit: 'cover' }).toFile(outPath)
+            } else if (type === 'favicon') {
+                // Favicons should be small (square). Resize to 64x64.
+                await transformer.webp({ quality: 85 }).resize(64, 64, { fit: 'cover' }).toFile(outPath)
+            } else if (type === 'logo') {
+                // Logos: constrain width to 600px max
+                await transformer.webp({ quality: 85 }).resize(600, null, { fit: 'inside', withoutEnlargement: true }).toFile(outPath)
+            } else {
+                await transformer.webp({ quality: 85 })
+                    .resize(type === 'cover' ? 600 : type === 'avatar' ? 400 : 1200, null, {
+                        fit: 'inside',
+                        withoutEnlargement: true,
+                    })
+                    .toFile(outPath)
+            }
 
             // Delete temp file
             await fs.unlink(tempPath).catch(() => undefined)

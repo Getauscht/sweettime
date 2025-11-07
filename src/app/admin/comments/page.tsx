@@ -81,12 +81,12 @@ export default function AdminCommentsPage() {
                                     </div>
                                     <div className="mt-1 text-white/70 text-sm">
                                         {c.deletedAt ? (
-                                            <span className="italic text-white/50">{c.deletedBy === 'moderator' ? 'comentário excluido por um moderador' : 'comentário deletado pelo próprio usuário'}</span>
+                                            <span className="italic text-white/50">{c.deletedBy === 'moderator' ? 'comentário excluído por um moderador' : 'comentário deletado pelo próprio usuário'}</span>
                                         ) : (
                                             c.content
                                         )}
                                     </div>
-                                    <div className="text-xs text-white/40 mt-1">Likes: {c.likes ?? 0} • Respostas: {c.replyCount ?? 0}</div>
+                                    <div className="text-xs text-white/40 mt-1">Curtidas: {c.likes ?? 0} • Respostas: {c.replyCount ?? 0}</div>
                                     <div className="text-xs text-white/40 mt-1">
                                         {c.chapter ? (
                                             <span>Capítulo: {c.chapter.number} de {c.chapter.webtoon.title}</span>

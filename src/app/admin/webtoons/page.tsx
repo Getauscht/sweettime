@@ -60,7 +60,7 @@ export default function WebtoonsManagement() {
 
             <Input
                 type="text"
-                placeholder="Pesquisar webtoons..."
+                placeholder="Buscar webtoons..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-[#0f0b14] border-white/10 text-white placeholder:text-white/40"
@@ -79,7 +79,7 @@ export default function WebtoonsManagement() {
                             <span className="text-white/60">{(webtoon.views || 0).toLocaleString()} visualizações</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" className="flex-1 text-white hover:bg-white/10" onClick={() => router.push(`/webtoon/${webtoon.slug}`)}>
+                            <Button variant="ghost" size="sm" className="flex-1 text-white hover:bg-white/10" onClick={() => router.push(`/obra/${webtoon.slug}`)}>
                                 <Eye className="h-4 w-4 mr-1" />
                                 Ver
                             </Button>
@@ -87,19 +87,19 @@ export default function WebtoonsManagement() {
                                 <Edit className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={async () => {
-                                if (!confirm('Tem certeza que deseja excluir esta série?')) return
+                                if (!confirm('Tem certeza que deseja excluir este webtoon?')) return
                                 try {
                                     const res = await fetch(`/api/admin/webtoons?webtoonId=${webtoon.id}`, { method: 'DELETE' })
                                     if (res.ok) {
                                         fetchList()
-                                        toast('Excluído', 'success')
+                                        toast('Webtoon excluído com sucesso', 'success')
                                     } else {
                                         const err = await res.json().catch(() => ({}))
-                                        toast(err.error || 'Falha ao excluir', 'error')
+                                        toast(err.error || 'Falha ao excluir webtoon', 'error')
                                     }
                                 } catch (err) {
                                     console.error('Delete error', err)
-                                    toast('Falha ao excluir', 'error')
+                                    toast('Falha ao excluir webtoon', 'error')
                                 }
                             }}>
                                 <Trash2 className="h-4 w-4" />

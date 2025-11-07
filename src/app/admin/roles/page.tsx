@@ -120,7 +120,7 @@ export default function RolesPage() {
     }
 
     const handleDelete = async (roleId: string) => {
-        if (!confirm('Are you sure you want to delete this role?')) return
+        if (!confirm('Tem certeza que deseja excluir esta função?')) return
 
         try {
             const response = await fetch(`/api/admin/roles/${roleId}`, {
@@ -154,18 +154,18 @@ export default function RolesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Role Management</h1>
-                    <p className="text-white/60 mt-2">Manage roles and their permissions</p>
+                    <h1 className="text-3xl font-bold text-white">Gerenciamento de Funções</h1>
+                    <p className="text-white/60 mt-2">Gerencie funções e permissões</p>
                 </div>
                 <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
-                    New Role
+                    Nova Função
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
-                    <div className="text-white/40">Loading...</div>
+                    <div className="text-white/40">Carregando...</div>
                 ) : (
                     roles.map((role) => (
                         <Card key={role.id} className="bg-[#0f0b14] border-white/10 p-6">
@@ -176,7 +176,7 @@ export default function RolesPage() {
                                     </div>
                                     <div>
                                         <h3 className="text-white font-semibold">{role.name}</h3>
-                                        <p className="text-white/60 text-sm">{role._count.users} users</p>
+                                        <p className="text-white/60 text-sm">{role._count.users} usuários</p>
                                     </div>
                                 </div>
                                 {!role.isSystem && (
@@ -203,7 +203,7 @@ export default function RolesPage() {
 
                             <div className="space-y-2">
                                 <div className="text-white/60 text-sm font-medium">
-                                    Permissions ({role.permissions.length})
+                                    Permissões ({role.permissions.length})
                                 </div>
                                 <div className="flex flex-wrap gap-1">
                                     {role.permissions.slice(0, 3).map((p) => (
@@ -213,7 +213,7 @@ export default function RolesPage() {
                                     ))}
                                     {role.permissions.length > 3 && (
                                         <span className="px-2 py-1 text-white/40 text-xs">
-                                            +{role.permissions.length - 3} more
+                                            +{role.permissions.length - 3} mais
                                         </span>
                                     )}
                                 </div>
@@ -221,7 +221,7 @@ export default function RolesPage() {
 
                             {role.isSystem && (
                                 <div className="mt-4 pt-4 border-t border-white/10">
-                                    <span className="text-xs text-purple-400">System Role</span>
+                                    <span className="text-xs text-purple-400">Função do sistema</span>
                                 </div>
                             )}
                         </Card>
@@ -229,7 +229,7 @@ export default function RolesPage() {
                 )}
             </div>
 
-            {/* Create/Edit Modal */}
+            {/* Modal de criar/editar */}
             {showModal && (
                 <Dialog open={showModal} onOpenChange={() => {
                     setEditingRole(null)
@@ -239,7 +239,7 @@ export default function RolesPage() {
                         <Card className="bg-[#0f0b14] border-white/10 p-6 max-w-3xl w-full my-8">
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-2xl font-bold text-white">
-                                    {editingRole ? 'Edit Role' : 'Create New Role'}
+                                    {editingRole ? 'Editar Função' : 'Criar Nova Função'}
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -254,29 +254,29 @@ export default function RolesPage() {
 
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label className="text-white">Role Name</Label>
+                                    <Label className="text-white">Nome da Função</Label>
                                     <Input
                                         value={roleForm.name}
                                         onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
                                         disabled={editingRole?.isSystem}
-                                        placeholder="e.g., Editor"
+                                        placeholder="ex.: Editor"
                                         className="bg-white/5 border-white/10 text-white disabled:opacity-50"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-white">Description</Label>
+                                    <Label className="text-white">Descrição</Label>
                                     <textarea
                                         value={roleForm.description}
                                         onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
-                                        placeholder="Describe this role's purpose..."
+                                        placeholder="Descreva o propósito desta função..."
                                         rows={3}
                                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500 resize-none"
                                     />
                                 </div>
 
                                 <div className="space-y-4">
-                                    <Label className="text-white">Permissions</Label>
+                                    <Label className="text-white">Permissões</Label>
                                     <div className="max-h-96 overflow-y-auto space-y-4 border border-white/10 rounded-lg p-4">
                                         {Object.entries(groupedPermissions).map(([category, perms]) => (
                                             <div key={category}>
@@ -327,13 +327,13 @@ export default function RolesPage() {
                                     }}
                                     className="text-white hover:bg-white/10"
                                 >
-                                    Cancel
+                                    Cancelar
                                 </Button>
                                 <Button
                                     onClick={handleSave}
                                     className="bg-purple-600 hover:bg-purple-700 text-white"
                                 >
-                                    {editingRole ? 'Save Changes' : 'Create Role'}
+                                    {editingRole ? 'Salvar Alterações' : 'Criar Função'}
                                 </Button>
                             </div>
                         </Card>

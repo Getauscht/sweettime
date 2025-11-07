@@ -53,25 +53,30 @@ model User {
   totpTempExpires         DateTime?
   roleId                  String?
   status                  String    @default("active") // active, suspended, banned
+  mustChangePassword      Boolean   @default(false) // for WordPress imports and forced password resets
   lastActive              DateTime  @default(now())
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  accounts        Account[]
-  sessions        Session[]
-  passwordResets  PasswordReset[]
-  role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
-  favorites       Favorite[]
-  follows         Follow[]
-  readingHistory  ReadingHistory[]
-  comments        Comment[]
-  commentsMention CommentMention[]
-  commentLikes    CommentLike[]
-  commentReports  CommentReport[]
-  webtoonRatings  WebtoonRating[]
+  accounts          Account[]
+  sessions          Session[]
+  passwordResets    PasswordReset[]
+  magicLinks        MagicLink[]
+  role              Role?              @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  favorites         Favorite[]
+  follows           Follow[]
+  readingHistory    ReadingHistory[]
+  comments          Comment[]
+  commentsMention   CommentMention[]
+  commentLikes      CommentLike[]
+  commentReports    CommentReport[]
+  webtoonRatings    WebtoonRating[]
+  novelRatings      NovelRating[]
   // relation to group memberships
-  groupMembers    GroupMember[]
-  Invite          Invite[]
+  groupMembers      GroupMember[]
+  Invite            Invite[]
+  // web push subscriptions
+  pushSubscriptions PushSubscription[]
 
   @@index([roleId])
 }
@@ -96,6 +101,34 @@ model PasswordReset {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model MagicLink {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model Settings {
+  id                  String   @id @default(cuid())
+  siteName            String   @default("Sweettime")
+  fromName            String   @default("Sweettime")
+  fromEmail           String   @default("no-reply@sweettime.com")
+  // Optional branding assets managed via admin panel
+  logoUrl             String?
+  faviconUrl          String?
+  magicLinkTtlMinutes Int      @default(60)
+  magicLinkEnabled    Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 // RBAC System
@@ -142,6 +175,7 @@ model Webtoon {
   slug        String   @unique
   description String?  @db.Text
   coverImage  String?
+  bannerImage String?
   status      String   @default("ongoing") // ongoing, completed, hiatus, cancelled
   views       Int      @default(0)
   likes       Int      @default(0)
@@ -164,6 +198,69 @@ model Webtoon {
   @@index([status])
 }
 
+// Work type enum to support multiple content types (webtoon, novel)
+enum WorkType {
+  WEBTOON
+  NOVEL
+}
+
+// Novels are textual works (novels/serialized prose)
+model Novel {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  coverImage  String?
+  bannerImage String?
+  status      String   @default("ongoing") // ongoing, completed, hiatus, cancelled
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  // chapters and relations
+  chapters       NovelChapter[]
+  genres         NovelGenre[]
+  favorites      Favorite[]
+  readingHistory ReadingHistory[]
+  comments       Comment[]
+  credits        NovelCredit[]
+  novelRatings   NovelRating[]
+  novelGroups    NovelGroup[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model NovelChapter {
+  id          String   @id @default(cuid())
+  novelId     String
+  number      Int
+  title       String?
+  content     String   @db.Text // Markdown content for novels
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // For novels we store markdown content; each novel chapter is created by a scanlation group
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  // Required scanlationGroupId - novel chapters are created by groups (parity with webtoon chapters)
+  scanlationGroupId String
+  scanlationGroup   ScanlationGroup @relation(fields: [scanlationGroupId], references: [id], onDelete: Restrict)
+
+  readingHistory ReadingHistory[]
+  comments       Comment[]
+
+  @@unique([novelId, number])
+  @@index([novelId])
+  @@index([scanlationGroupId])
+  @@index([publishedAt])
+}
+
 // Per-user rating for webtoons. Rating is between 0.5 and 5.0 (inclusive), step 0.5
 model WebtoonRating {
   id        String   @id @default(cuid())
@@ -181,6 +278,23 @@ model WebtoonRating {
   @@index([webtoonId])
 }
 
+// Per-user rating for novels. Rating is between 0.5 and 5.0 (inclusive), step 0.5
+model NovelRating {
+  id        String   @id @default(cuid())
+  userId    String
+  novelId   String
+  rating    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId])
+  @@index([userId])
+  @@index([novelId])
+}
+
 model Author {
   id          String   @id @default(cuid())
   name        String
@@ -193,6 +307,7 @@ model Author {
 
   follows        Follow[]
   webtoonCredits WebtoonCredit[]
+  novelCredits   NovelCredit[]
   webtoon        Webtoon[]
 
   @@index([slug])
@@ -212,6 +327,20 @@ model WebtoonCredit {
   @@index([authorId])
 }
 
+model NovelCredit {
+  id       String @id @default(cuid())
+  novelId  String
+  authorId String
+  role     String // AUTHOR, EDITOR
+
+  novel  Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([novelId, authorId, role])
+  @@index([novelId])
+  @@index([authorId])
+}
+
 model Genre {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -221,6 +350,7 @@ model Genre {
   updatedAt   DateTime @updatedAt
 
   webtoons WebtoonGenre[]
+  novels   NovelGenre[]
 
   @@index([slug])
 }
@@ -236,6 +366,20 @@ model WebtoonGenre {
 
   @@unique([webtoonId, genreId])
   @@index([webtoonId])
+  @@index([genreId])
+}
+
+model NovelGenre {
+  id        String   @id @default(cuid())
+  novelId   String
+  genreId   String
+  createdAt DateTime @default(now())
+
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@unique([novelId, genreId])
+  @@index([novelId])
   @@index([genreId])
 }
 
@@ -296,19 +440,38 @@ model Notification {
   @@index([createdAt])
 }
 
+// Stores Web Push Subscriptions for users
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  // raw endpoint can be long; store as Text. Use endpointHash (sha256) as unique key for upserts.
+  endpoint     String   @db.Text
+  endpointHash String   @unique
+  keys         Json // stores { p256dh, auth }
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 // Favorites & Follows
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
-  webtoonId String
+  webtoonId String?
+  novelId   String?
   createdAt DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  webtoon Webtoon @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webtoon Webtoon? @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  novel   Novel?   @relation(fields: [novelId], references: [id], onDelete: Cascade)
 
   @@unique([userId, webtoonId])
+  @@unique([userId, novelId])
   @@index([userId])
   @@index([webtoonId])
+  @@index([novelId])
 }
 
 model Follow {
@@ -327,54 +490,75 @@ model Follow {
 
 // Reading History
 model ReadingHistory {
-  id         String   @id @default(cuid())
-  userId     String? // null for anonymous users
-  sessionId  String? // for anonymous tracking
-  webtoonId  String
-  chapterId  String
+  id        String  @id @default(cuid())
+  userId    String? // null for anonymous users
+  sessionId String? // for anonymous tracking
+
+  // Support both legacy and new unified fields
+  workId   String? // unified: webtoonId or novelId
+  workType WorkType? // unified: WEBTOON or NOVEL
+
+  // Legacy separate fields
+  webtoonId      String?
+  chapterId      String?
+  novelId        String?
+  novelChapterId String?
+
   progress   Float    @default(0) // percentage read
   lastReadAt DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  webtoon Webtoon @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
-  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webtoon      Webtoon?      @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  chapter      Chapter?      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  novel        Novel?        @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  novelChapter NovelChapter? @relation(fields: [novelChapterId], references: [id], onDelete: Cascade)
 
   @@unique([userId, webtoonId, chapterId])
   @@unique([sessionId, webtoonId, chapterId])
+  @@unique([userId, novelId, novelChapterId])
+  @@unique([sessionId, novelId, novelChapterId])
   @@index([userId])
   @@index([sessionId])
+  @@index([workId])
   @@index([webtoonId])
+  @@index([novelId])
   @@index([lastReadAt])
 }
 
 // Comments & Mentions
 model Comment {
-  id        String    @id @default(cuid())
-  userId    String
-  webtoonId String?
-  chapterId String?
-  parentId  String? // For nested replies
-  content   String    @db.Text
-  likes     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  deletedBy String? // 'owner' | 'moderator'
+  id             String    @id @default(cuid())
+  userId         String
+  webtoonId      String?
+  chapterId      String?
+  novelId        String?
+  novelChapterId String?
+  parentId       String? // For nested replies
+  content        String    @db.Text
+  likes          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  deletedBy      String? // 'owner' | 'moderator'
 
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  webtoon  Webtoon?         @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
-  chapter  Chapter?         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  parent   Comment?         @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[]        @relation("CommentReplies")
-  mentions CommentMention[]
-  likedBy  CommentLike[]
-  reports  CommentReport[]
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webtoon      Webtoon?         @relation(fields: [webtoonId], references: [id], onDelete: Cascade)
+  chapter      Chapter?         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  novel        Novel?           @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  novelChapter NovelChapter?    @relation(fields: [novelChapterId], references: [id], onDelete: Cascade)
+  parent       Comment?         @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]        @relation("CommentReplies")
+  mentions     CommentMention[]
+  likedBy      CommentLike[]
+  reports      CommentReport[]
 
   @@index([userId])
   @@index([webtoonId])
   @@index([chapterId])
+  @@index([novelId])
+  @@index([novelChapterId])
   @@index([parentId])
   @@index([createdAt])
 }
@@ -443,7 +627,10 @@ model ScanlationGroup {
 
   members       GroupMember[]
   webtoonGroups WebtoonGroup[] // Many-to-many with Webtoons (optional)
+  novelGroups   NovelGroup[]
   chapters      Chapter[]
+  // relation back to novel chapters created by this group
+  novelChapters NovelChapter[]
   Invite        Invite[]
 
   @@index([slug])
@@ -462,6 +649,22 @@ model WebtoonGroup {
 
   @@unique([webtoonId, groupId])
   @@index([webtoonId])
+  @@index([groupId])
+}
+
+// Many-to-many relationship between Novels and ScanlationGroups
+// Tracks which groups have claimed/are working on which novels
+model NovelGroup {
+  id       String   @id @default(cuid())
+  novelId  String
+  groupId  String
+  clamedAt DateTime @default(now())
+
+  novel Novel           @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  group ScanlationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([novelId, groupId])
+  @@index([novelId])
   @@index([groupId])
 }
 

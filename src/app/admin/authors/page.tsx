@@ -53,7 +53,8 @@ export default function AuthorsPage() {
             const response = await fetch(url, {
                 method: editing ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                // Do not send slug from client. Server will generate/normalize slug.
+                body: JSON.stringify({ name: form.name, bio: form.bio || undefined, avatar: form.avatar || undefined }),
             })
 
             if (response.ok) {
@@ -70,7 +71,7 @@ export default function AuthorsPage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this author?')) return
+        if (!confirm('Excluir este autor?')) return
         if (!confirm('Tem certeza que deseja excluir este autor?')) return
 
         try {
@@ -196,8 +197,8 @@ export default function AuthorsPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-white">Slug</Label>
-                                        <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                                        <Label className="text-white">Slug (será gerado pelo servidor)</Label>
+                                        <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="bg-white/5 border-white/10 text-white" readOnly />
                                     </div>
 
                                     <div className="space-y-2">

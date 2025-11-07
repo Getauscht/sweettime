@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
+import { sendPushToUser } from '@/lib/push'
 import { z } from 'zod'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -173,14 +174,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 } else if (reply.webtoon) {
                     link = `/webtoon/${reply.webtoon.slug}?comment=${reply.id}`
                 }
-                await prisma.notification.create({
-                    data: {
-                        userId: parentComment.userId,
-                        type: 'reply',
-                        title: 'Nova resposta ao seu comentário',
-                        message: `${session.user.name} respondeu ao seu comentário`,
-                        link,
-                    }
+                await (await import('@/lib/notifications')).createNotificationAndPush({
+                    userId: parentComment.userId,
+                    type: 'reply',
+                    title: 'Nova resposta ao seu comentário',
+                    message: `${session.user.name} respondeu ao seu comentário`,
+                    link,
                 })
             }
 
@@ -192,15 +191,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 } else if (reply.webtoon) {
                     link = `/webtoon/${reply.webtoon.slug}?comment=${reply.id}`
                 }
-                await prisma.notification.createMany({
-                    data: mentions.map((userId: string) => ({
-                        userId,
-                        type: 'mention',
-                        title: 'Você foi mencionado',
-                        message: `${session.user.name} mencionou você em uma resposta`,
-                        link,
-                    })),
-                })
+                const items = mentions.map((userId: string) => ({
+                    userId,
+                    type: 'mention',
+                    title: 'Você foi mencionado',
+                    message: `${session.user.name} mencionou você em uma resposta`,
+                    link,
+                }))
+                await (await import('@/lib/notifications')).createNotificationsAndPushMany(items)
             }
 
             // Transform reply to include like count

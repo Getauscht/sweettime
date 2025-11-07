@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog } from '@/components/ui/dialog'
 import { useToast } from '@/components/Toast'
-import { Edit, Lock, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Edit, Lock, Trash2, ChevronLeft, ChevronRight, X, Send, UploadCloud } from 'lucide-react'
 
 interface User {
     id: string
@@ -30,6 +31,7 @@ interface Role {
 
 export default function UserManagement() {
     const { toast, ToastContainer } = useToast()
+    const router = useRouter()
     const [users, setUsers] = useState<User[]>([])
     const [roles, setRoles] = useState<Role[]>([])
     const [loading, setLoading] = useState(true)
@@ -40,6 +42,11 @@ export default function UserManagement() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [editingUser, setEditingUser] = useState<User | null>(null)
+    const [importModalOpen, setImportModalOpen] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+    const [importResult, setImportResult] = useState<any>(null)
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
     const [editForm, setEditForm] = useState({
         name: '',
         email: '',
@@ -161,6 +168,34 @@ export default function UserManagement() {
         }
     }
 
+    const handleSendMagicLink = async (userId: string, userEmail: string | null) => {
+        if (!userEmail) {
+            toast('Usuário não possui email cadastrado', 'error')
+            return
+        }
+
+        if (!confirm(`Enviar link de recuperação para ${userEmail}?`)) return
+
+        try {
+            const response = await fetch('/api/admin/users/send-magic-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                toast(data.message || 'Link enviado com sucesso!', 'success')
+            } else {
+                toast(data.error || 'Falha ao enviar link', 'error')
+            }
+        } catch (error) {
+            console.error('Error sending magic link:', error)
+            toast('Falha ao enviar link', 'error')
+        }
+    }
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('pt-BR', {
             year: 'numeric',
@@ -184,13 +219,13 @@ export default function UserManagement() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* Cabeçalho */}
             <div>
                 <h1 className="text-3xl font-bold text-white">Gerenciamento de Usuários</h1>
-                <p className="text-white/60 mt-2">Visualizar, editar, suspender ou excluir contas de usuários</p>
+                <p className="text-white/60 mt-2">Visualize, edite, suspenda ou exclua contas de usuários</p>
             </div>
 
-            {/* Filters */}
+            {/* Filtros */}
             <div className="flex flex-col md:flex-row gap-4">
                 <Input
                     type="text"
@@ -227,9 +262,30 @@ export default function UserManagement() {
                     <option value="lastActive">Última atividade</option>
                     <option value="name">Nome</option>
                 </select>
+                <div className="ml-auto flex items-center gap-2">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        className="hidden"
+                        onChange={(e) => {
+                            const f = e.target.files && e.target.files[0]
+                            setSelectedFile(f || null)
+                            setImportResult(null)
+                            setImportModalOpen(true)
+                        }}
+                    />
+                    <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-[#21102b] text-white border border-white/10 hover:bg-[#2a1239]"
+                    >
+                        <UploadCloud className="h-4 w-4 mr-2" />
+                        Importar usuários (WordPress)
+                    </Button>
+                </div>
             </div>
 
-            {/* Table */}
+            {/* Tabela */}
             <Card className="bg-[#0f0b14] border-white/10">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -264,7 +320,7 @@ export default function UserManagement() {
                                                 {user.image ? (
                                                     <img
                                                         src={user.image}
-                                                        alt={user.name || 'User'}
+                                                        alt={user.name || 'Usuário'}
                                                         className="w-10 h-10 rounded-full"
                                                     />
                                                 ) : (
@@ -300,6 +356,13 @@ export default function UserManagement() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
+                                                    onClick={() => handleSendMagicLink(user.id, user.email)}
+                                                    className="p-2 text-white/60 hover:text-blue-400 hover:bg-white/5 rounded transition-colors"
+                                                    title="Recuperar senha legada"
+                                                >
+                                                    <Send className="h-4 w-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => handleEdit(user)}
                                                     className="p-2 text-white/60 hover:text-purple-400 hover:bg-white/5 rounded transition-colors"
                                                     title="Editar usuário"
@@ -329,7 +392,7 @@ export default function UserManagement() {
                     </table>
                 </div>
 
-                {/* Pagination */}
+                {/* Paginação */}
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
                         <div className="text-sm text-white/60">
@@ -361,7 +424,7 @@ export default function UserManagement() {
                 )}
             </Card>
 
-            {/* Edit User Modal */}
+            {/* Modal de edição de usuário */}
             {editingUser && (
                 <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
@@ -443,6 +506,109 @@ export default function UserManagement() {
                 </Dialog>
             )}
             <ToastContainer />
+
+            {/* Modal de importação CSV */}
+            {importModalOpen && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                    <Card className="bg-[#0f0b14] border-white/10 p-6 max-w-xl w-full">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-2xl font-bold text-white">Importar usuários do WordPress</h3>
+                            <button
+                                onClick={() => { setImportModalOpen(false); setSelectedFile(null); setUploadProgress(null); setImportResult(null) }}
+                                className="text-white/60 hover:text-white"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-4 border-2 border-dashed border-white/10 rounded-md text-center">
+                                {!selectedFile ? (
+                                    <div className="text-white/60">Selecione um arquivo CSV exportado do WordPress (colunas: ID, user_login, user_pass, user_nicename, user_email)</div>
+                                ) : (
+                                    <div className="text-white">
+                                        <div className="font-medium">{selectedFile.name}</div>
+                                        <div className="text-sm text-white/60">{Math.round(selectedFile.size / 1024)} KB</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {uploadProgress !== null && (
+                                <div>
+                                    <div className="text-white/60 text-sm mb-2">Progresso de upload</div>
+                                    <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
+                                        <div style={{ width: `${uploadProgress}%` }} className="h-full bg-purple-600" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {importResult && (
+                                <div className="bg-white/5 p-3 rounded text-white/80">
+                                    <div className="font-medium">Resultado da importação</div>
+                                    <div className="text-sm mt-2">Importados: {importResult.imported} — Pulados: {importResult.skipped}</div>
+                                    {importResult.errors && importResult.errors.length > 0 && (
+                                        <div className="mt-2 text-sm text-orange-300">
+                                            Erros: {importResult.errors.length} (ver console para detalhes)
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-4 justify-end mt-6">
+                            <Button
+                                variant="ghost"
+                                onClick={() => { setImportModalOpen(false); setSelectedFile(null); setUploadProgress(null); setImportResult(null) }}
+                                className="text-white hover:bg-white/10"
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (!selectedFile) {
+                                        toast('Selecione um arquivo CSV antes de importar', 'error')
+                                        return
+                                    }
+
+                                    setUploadProgress(0)
+
+                                    try {
+                                        const formData = new FormData()
+                                        formData.append('file', selectedFile)
+
+                                        // Use fetch with credentials to include cookies
+                                        const response = await fetch('/api/admin/users/import', {
+                                            method: 'POST',
+                                            body: formData,
+                                            headers: {
+                                                Accept: 'application/json'               
+                                            }
+                                        })
+
+                                        if (!response.ok) {
+                                            const data = await response.json().catch(() => null)
+                                            toast((data && data.error) || 'Falha na importação', 'error')
+                                        } else {
+                                            const data = await response.json()
+                                            setImportResult(data)
+                                            toast(data.message || 'Importação concluída', 'success')
+                                            fetchUsers()
+                                        }
+                                    } catch (error) {
+                                        console.error('Import error:', error)
+                                        toast('Erro ao importar usuários', 'error')
+                                    } finally {
+                                        setUploadProgress(null)
+                                    }
+                                }}
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                            >
+                                Iniciar importação
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     )
 }

@@ -48,6 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     slug: true,
                     description: true,
                     coverImage: true,
+                    bannerImage: true,
                     status: true,
                     views: true,
                     likes: true,
@@ -128,6 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 slug: webtoon.slug,
                 description: webtoon.description,
                 coverImage: webtoon.coverImage,
+                bannerImage: webtoon.bannerImage,
                 // Legacy key (array) kept for backward compatibility
                 author: authors,
                 // Standardized authors array

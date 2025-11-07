@@ -19,7 +19,7 @@ export default function AuthorWebtoonsList({ webtoons }: { webtoons?: WebtoonCar
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {uniqueWebtoons && uniqueWebtoons.length > 0 ? (
                 uniqueWebtoons.map((w) => (
-                    <Link key={`${w.id}-${w.slug}`} href={`/webtoon/${w.slug}`} className="block p-4 bg-[#1a1625] hover:bg-purple-600/10 rounded-lg transition-colors border border-purple-600/20">
+                    <Link key={`${w.id}-${w.slug}`} href={`/obra/${w.slug}`} className="block p-4 bg-[#1a1625] hover:bg-purple-600/10 rounded-lg transition-colors border border-purple-600/20">
                         <div className="flex gap-4">
                             <div className="w-20 h-28 rounded-md overflow-hidden bg-gray-800 flex-shrink-0">
                                 {w.coverImage ? (

@@ -10,6 +10,24 @@ async function main() {
     console.log('📋 Initializing RBAC system...')
     await initializeRBAC()
 
+    // Create default settings
+    console.log('⚙️  Creating default settings...')
+    await prisma.settings.upsert({
+        where: { id: 'default' },
+        update: {},
+        create: {
+            id: 'default',
+            siteName: process.env.SITE_NAME || 'Sweettime',
+            fromName: process.env.FROM_NAME || 'Sweettime',
+            fromEmail: process.env.FROM_EMAIL || 'no-reply@sweettime.com',
+            logoUrl: process.env.DEFAULT_LOGO_URL || null,
+            faviconUrl: process.env.DEFAULT_FAVICON_URL || null,
+            magicLinkTtlMinutes: 60,
+            magicLinkEnabled: true,
+        },
+    })
+    console.log('✅ Default settings created')
+
     // Create admin user
     console.log('👤 Creating admin user...')
     const adminRole = await prisma.role.findUnique({
@@ -186,6 +204,43 @@ async function main() {
         skipDuplicates: true,
     })
 
+    // Create sample novels
+    console.log('📚 Creating sample novels...')
+    const novel1 = await (prisma as any).novel.upsert({
+        where: { slug: 'shadows-of-the-ink' },
+        update: {},
+        create: {
+            title: 'Shadows of the Ink',
+            slug: 'shadows-of-the-ink',
+            description: 'A serialized fantasy novel about secrets written in ink',
+            status: 'ongoing',
+            views: 45000,
+            likes: 3200,
+            rating: 4.7,
+        },
+    })
+
+    // Create sample novel chapters (markdown content)
+    await (prisma as any).novelChapter.createMany({
+        data: [
+            {
+                novelId: novel1.id,
+                number: 1,
+                title: 'Prologue',
+                content: '# Prologue\n\nO dia começou como outro qualquer...',
+                scanlationGroupId: adminLegacyGroup?.id,
+            },
+            {
+                novelId: novel1.id,
+                number: 2,
+                title: 'Capítulo Um',
+                content: '# Capítulo Um\n\nA história continuou com...',
+                scanlationGroupId: adminLegacyGroup?.id,
+            },
+        ],
+        skipDuplicates: true,
+    })
+
     // Backfill any existing webtoons/chapters/authors with null scanlationGroupId to adminLegacyGroup
     console.log('🔁 Backfilling existing records to admin-legacy group where missing...')
     if (adminLegacyGroup) {
@@ -194,6 +249,12 @@ async function main() {
             data: [
                 { webtoonId: webtoon1.id, groupId: adminLegacyGroup.id },
                 { webtoonId: webtoon2.id, groupId: adminLegacyGroup.id },
+            ], skipDuplicates: true
+        })
+        // Ensure sample novels are linked to adminLegacyGroup via NovelGroup
+        await prisma.novelGroup.createMany({
+            data: [
+                { novelId: novel1.id, groupId: adminLegacyGroup.id },
             ], skipDuplicates: true
         })
 

@@ -12,6 +12,7 @@ export const GET = withPermission(
             // Get statistics
             const [
                 totalWebtoons,
+                totalNovels,
                 totalAuthors,
                 totalUsers,
                 activeUsers,
@@ -20,6 +21,7 @@ export const GET = withPermission(
                 totalViews,
             ] = await Promise.all([
                 prisma.webtoon.count(),
+                prisma.novel.count(),
                 prisma.author.count(),
                 prisma.user.count(),
                 prisma.user.count({
@@ -67,6 +69,8 @@ export const GET = withPermission(
             return NextResponse.json({
                 statistics: {
                     totalWebtoons,
+                    totalNovels,
+                    totalWorks: totalWebtoons + totalNovels,
                     totalAuthors,
                     totalUsers,
                     activeUsers,

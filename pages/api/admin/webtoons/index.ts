@@ -24,6 +24,7 @@ export const GET = withPermission(
                         slug: true,
                         description: true,
                         coverImage: true,
+                        bannerImage: true,
                         status: true,
                         createdAt: true,
                         updatedAt: true,
@@ -56,6 +57,7 @@ export const GET = withPermission(
                     slug: webtoon.slug,
                     description: webtoon.description,
                     coverImage: webtoon.coverImage,
+                    bannerImage: webtoon.bannerImage,
                     status: webtoon.status,
                     credits: webtoon.credits,
                     authors,
@@ -101,6 +103,7 @@ export const GET = withPermission(
                         slug: true,
                         description: true,
                         coverImage: true,
+                        bannerImage: true,
                         status: true,
                         createdAt: true,
                         updatedAt: true,
@@ -140,7 +143,7 @@ export const GET = withPermission(
 
 export const POST = withPermission(
     PERMISSIONS.WEBTOONS_CREATE,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const body = await req.json()
 
@@ -152,6 +155,7 @@ export const POST = withPermission(
                 artistIds: z.array(z.string()).optional(),
                 genreIds: z.array(z.string()).optional(),
                 coverImage: z.string().optional(),
+                bannerImage: z.string().optional(),
                 status: z.string().optional(),
             })
 
@@ -203,6 +207,7 @@ export const POST = withPermission(
                             slug,
                             description,
                             coverImage,
+                            bannerImage: parsed.data.bannerImage,
                             status: status || 'ongoing',
                         },
                     })
@@ -269,7 +274,7 @@ export const POST = withPermission(
 
 export const PATCH = withPermission(
     PERMISSIONS.WEBTOONS_EDIT,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const body = await req.json()
             const patchSchema = z.object({
@@ -351,7 +356,7 @@ export const PATCH = withPermission(
 
 export const DELETE = withPermission(
     PERMISSIONS.WEBTOONS_DELETE,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId }: { userId: string }) => {
         try {
             const { searchParams } = new URL(req.url)
             const webtoonId = searchParams.get('webtoonId')

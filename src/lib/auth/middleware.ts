@@ -67,13 +67,35 @@ export async function requireAnyPermission(
  * Helper to create protected API route handler
  */
 export function withAuth(
-    handler: (req: Request, context: { userId: string; session: Session | null }) => Promise<Response>,
+    handler: any,
     authOptions?: unknown
 ) {
-    return async (req: Request, routeContext?: any) => {
-        // If this helper is used from a Pages API handler, callers can pass
-        // the Next.js `req` and `res` via routeContext so we can call
-        // getServerSession(req,res,authOptions) instead of the App Router form.
+    return async (...args: any[]) => {
+        // Detect Pages API invocation: (req, res)
+        const isPagesAPI = args.length >= 2 && args[0] && args[1] && typeof args[0].headers === 'object' && typeof args[1].status === 'function'
+
+        if (isPagesAPI) {
+            const req = args[0]
+            const res = args[1]
+            const session = (await getServerSession(req as any, res as any, authOptions as any)) as Session | null
+
+            if (!session?.user?.id) {
+                return res.status(401).json({ error: 'Unauthorized' })
+            }
+
+            // If original handler is a Pages API handler (req,res), call it directly
+            try {
+                return await handler(req, res)
+            } catch (err) {
+                // propagate
+                throw err
+            }
+        }
+
+        // App Router / Edge-style Request
+        const req = args[0] as Request
+        const routeContext = args[1]
+
         const session = (routeContext?.req && routeContext?.res)
             ? ((await getServerSession(routeContext.req as any, routeContext.res as any, authOptions as any)) as Session | null)
             : ((await getServerSession(authOptions as any)) as Session | null)
@@ -98,10 +120,43 @@ export function withAuth(
  */
 export function withPermission(
     permission: PermissionName | PermissionName[],
-    handler: (req: Request, context: { userId: string; session: Session | null }) => Promise<Response>,
+    handler: any,
     authOptions?: unknown
 ) {
-    return async (req: Request, routeContext?: any) => {
+    return async (...args: any[]) => {
+        // Detect Pages API invocation: (req, res)
+        const isPagesAPI = args.length >= 2 && args[0] && args[1] && typeof args[0].headers === 'object' && typeof args[1].status === 'function'
+
+        if (isPagesAPI) {
+            const req = args[0]
+            const res = args[1]
+            const session = (await getServerSession(req as any, res as any, authOptions as any)) as Session | null
+
+            if (!session?.user?.id) {
+                return res.status(401).json({ error: 'Unauthorized' })
+            }
+
+            const userId = session.user.id
+            const permissions = Array.isArray(permission) ? permission : [permission]
+
+            // Admin users bypass permission checks for administrative routes
+            if (await isAdminSession(session)) {
+                return handler(req, res)
+            }
+
+            const allowed = await hasAnyPermission(userId, permissions)
+
+            if (!allowed) {
+                return res.status(403).json({ error: 'Forbidden', message: 'Insufficient permissions' })
+            }
+
+            return handler(req, res)
+        }
+
+        // App Router / Edge-style Request
+        const req = args[0] as Request
+        const routeContext = args[1]
+
         const session = (routeContext?.req && routeContext?.res)
             ? ((await getServerSession(routeContext.req as any, routeContext.res as any, authOptions as any)) as Session | null)
             : ((await getServerSession(authOptions as any)) as Session | null)
@@ -114,7 +169,7 @@ export function withPermission(
         }
 
         const userId = session.user.id
-        const permissions = Array.isArray(permission) ? permission : [permission]
+        const permissionsArr = Array.isArray(permission) ? permission : [permission]
 
         // Admin users bypass permission checks for administrative routes
         if (await isAdminSession(session)) {
@@ -125,7 +180,7 @@ export function withPermission(
             })
         }
 
-        const allowed = await hasAnyPermission(userId, permissions)
+        const allowed = await hasAnyPermission(userId, permissionsArr)
 
         if (!allowed) {
             return NextResponse.json(

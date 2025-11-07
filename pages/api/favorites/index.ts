@@ -51,6 +51,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             }
                         }
                     }
+                },
+                novel: {
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                        description: true,
+                        coverImage: true,
+                        status: true,
+                        views: true,
+                        likes: true,
+                        rating: true,
+                        _count: { select: { chapters: true } }
+                    }
                 }
             },
             orderBy: { createdAt: 'desc' }
@@ -60,11 +74,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             favorites: favorites.map(f => ({
                 id: f.id,
                 createdAt: f.createdAt,
-                webtoon: {
-                    ...f.webtoon,
-                    totalChapters: f.webtoon._count.chapters,
-                    genres: f.webtoon.genres.map(wg => wg.genre)
-                }
+                item: f.webtoon ? {
+                    type: 'webtoon',
+                    data: {
+                        ...f.webtoon,
+                        totalChapters: f.webtoon._count?.chapters ?? 0,
+                        genres: (f.webtoon.genres || []).map(wg => wg.genre)
+                    }
+                } : f.novel ? {
+                    type: 'novel',
+                    data: {
+                        ...f.novel,
+                        totalChapters: f.novel._count?.chapters ?? 0,
+                    }
+                } : null
             }))
         })
     } catch (error) {

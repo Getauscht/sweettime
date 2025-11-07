@@ -8,7 +8,7 @@ import { z } from 'zod'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions)
 
-    if (!session || !isAdminSession(session)) {
+    if (!session || !(await isAdminSession(session))) {
         return res.status(403).json({ error: 'Forbidden' })
     }
 

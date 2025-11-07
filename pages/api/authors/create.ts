@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
 import { isGroupMember } from '@/lib/auth/groups'
+import { Prisma } from '@prisma/client'
+import { generateSlug } from '@/lib/slug'
 import { z } from 'zod'
 
 // Validation schema for author creation
@@ -41,38 +43,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Validate request body
         const validatedData = createAuthorSchema.parse(req.body)
 
-        // Generate a unique slug from the author name
-        const baseSlug = validatedData.name
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .substring(0, 100)
+        // Generate slug server-side (ignore any slug supplied by client)
+        const maxCreateAttempts = 6
+        let lastError: any = null
+        for (let attempt = 0; attempt < maxCreateAttempts; attempt++) {
+            try {
+                const slug = await generateSlug(prisma, validatedData.name)
+                const author = await prisma.author.create({
+                    data: {
+                        name: validatedData.name,
+                        slug,
+                        bio: validatedData.bio,
+                        avatar: validatedData.avatar,
+                        socialLinks: validatedData.socialLinks as any,
+                    },
+                })
 
-        // Ensure slug uniqueness by appending a random suffix if needed
-        let slug = baseSlug
-        let existingAuthor = await prisma.author.findUnique({ where: { slug } })
-
-        if (existingAuthor) {
-            // Add random suffix to ensure uniqueness
-            const randomSuffix = Math.random().toString(36).substring(2, 7)
-            slug = `${baseSlug}-${randomSuffix}`
+                return res.status(201).json({ message: 'Author created successfully', author })
+            } catch (err: any) {
+                lastError = err
+                // If unique constraint error (possible race), retry
+                if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+                    // retry
+                    continue
+                }
+                // other errors -> break and return 500
+                console.error('Error creating author (non-retry):', err)
+                return res.status(500).json({ error: 'Failed to create author' })
+            }
         }
 
-        // Create the author
-        const author = await prisma.author.create({
-            data: {
-                name: validatedData.name,
-                slug,
-                bio: validatedData.bio,
-                avatar: validatedData.avatar,
-                socialLinks: validatedData.socialLinks as any,
-            },
-        })
-
-        return res.status(201).json({
-            message: 'Author created successfully',
-            author,
-        })
+        console.error('Error creating author after retries:', lastError)
+        return res.status(500).json({ error: 'Failed to create author after retries' })
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({

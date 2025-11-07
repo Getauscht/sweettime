@@ -27,6 +27,7 @@ export const PERMISSIONS = {
     USERS_DELETE: 'users.delete',
     USERS_SUSPEND: 'users.suspend',
     USERS_MANAGE_ROLES: 'users.manage_roles',
+    USERS_SEND_MAGIC_LINK: 'users.send_magic_link',
 
     // Roles & Permissions
     ROLES_VIEW: 'roles.view',
@@ -42,6 +43,7 @@ export const PERMISSIONS = {
     // System
     SYSTEM_SETTINGS: 'system.settings',
     SYSTEM_LOGS: 'system.logs',
+    SETTINGS_MANAGE: 'settings.manage',
 
     // Groups / Scanlation
     GROUPS_VIEW: 'groups.view',
@@ -79,6 +81,7 @@ export const DEFAULT_ROLES = {
             PERMISSIONS.GENRES_EDIT,
             PERMISSIONS.USERS_VIEW,
             PERMISSIONS.USERS_SUSPEND,
+            PERMISSIONS.USERS_SEND_MAGIC_LINK,
             PERMISSIONS.ANALYTICS_VIEW,
             PERMISSIONS.GROUPS_VIEW,
             PERMISSIONS.GROUPS_MANAGE_MEMBERS,

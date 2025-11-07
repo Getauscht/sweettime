@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
+import { sendPushToUser } from '@/lib/push'
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 
@@ -10,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // GET - List comments
     if (req.method === 'GET') {
-        const { webtoonId, chapterId, sort } = req.query
+        const { webtoonId, chapterId, novelId, novelChapterId, sort } = req.query
 
         try {
             const where: Prisma.CommentWhereInput = {
@@ -18,6 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
             if (webtoonId) where.webtoonId = webtoonId as string
             if (chapterId) where.chapterId = chapterId as string
+            if (novelId) where.novelId = novelId as string
+            if (novelChapterId) where.novelChapterId = novelChapterId as string
 
             // Only fetch top-level comments (no parent)
             where.parentId = null
@@ -152,6 +155,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const bodySchema = z.object({
             webtoonId: z.string().optional(),
             chapterId: z.string().optional(),
+            novelId: z.string().optional(),
+            novelChapterId: z.string().optional(),
             content: z.string().min(1, 'Content is required'),
             mentions: z.array(z.string()).optional(),
         })
@@ -162,10 +167,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Invalid payload', details: parsed.error.format() })
         }
 
-        const { webtoonId, chapterId, content, mentions } = parsed.data
+        const { webtoonId, chapterId, novelId, novelChapterId, content, mentions } = parsed.data
 
-        if (!webtoonId && !chapterId) {
-            return res.status(400).json({ error: 'Either webtoonId or chapterId must be provided' })
+        if (!webtoonId && !chapterId && !novelId && !novelChapterId) {
+            return res.status(400).json({ error: 'Either webtoonId/chapterId or novelId/novelChapterId must be provided' })
         }
 
         try {
@@ -174,6 +179,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     userId: session.user.id,
                     webtoonId: webtoonId || null,
                     chapterId: chapterId || null,
+                    novelId: novelId || null,
+                    novelChapterId: novelChapterId || null,
                     content,
                     mentions: mentions?.length
                         ? {
@@ -191,15 +198,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             image: true,
                         },
                     },
-                    webtoon: {
-                        select: { slug: true }
-                    },
-                    chapter: {
-                        select: {
-                            number: true,
-                            webtoon: { select: { slug: true } }
-                        }
-                    },
+                    webtoon: { select: { slug: true } },
+                    chapter: { select: { number: true, webtoon: { select: { slug: true } } } },
+                    novel: { select: { slug: true } },
+                    novelChapter: { select: { number: true, novel: { select: { slug: true } } } },
                     mentions: {
                         include: {
                             user: {
@@ -221,16 +223,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
                 } else if (comment.webtoon) {
                     link = `/webtoon/${comment.webtoon.slug}?comment=${comment.id}`
+                } else if (comment.novelChapter && comment.novelChapter.novel) {
+                    link = `/novel/${comment.novelChapter.novel.slug}/chapter/${comment.novelChapter.number}?comment=${comment.id}`
+                } else if (comment.novel) {
+                    link = `/novel/${comment.novel.slug}?comment=${comment.id}`
                 }
-                await prisma.notification.createMany({
-                    data: mentions.map((userId: string) => ({
-                        userId,
-                        type: 'mention',
-                        title: 'Você foi mencionado',
-                        message: `${session.user.name} mencionou você em um comentário`,
-                        link,
-                    })),
-                })
+                const items = mentions.map((userId: string) => ({
+                    userId,
+                    type: 'mention',
+                    title: 'Você foi mencionado',
+                    message: `${session.user.name} mencionou você em um comentário`,
+                    link,
+                }))
+                // create notifications and send web push
+                await (await import('@/lib/notifications')).createNotificationsAndPushMany(items)
             }
 
             return res.status(201).json({ comment })

@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
+import { sendPushToUser } from '@/lib/push'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions)
@@ -82,14 +83,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     } else if (comment.webtoon) {
                         link = `/webtoon/${(comment as any).webtoon.slug}?comment=${comment.id}`
                     }
-                    await prisma.notification.create({
-                        data: {
-                            userId: comment.userId,
-                            type: 'like',
-                            title: 'Novo like no seu comentário',
-                            message: `${session.user.name} curtiu seu comentário`,
-                            link,
-                        }
+                    await (await import('@/lib/notifications')).createNotificationAndPush({
+                        userId: comment.userId,
+                        type: 'like',
+                        title: 'Novo like no seu comentário',
+                        message: `${session.user.name} curtiu seu comentário`,
+                        link,
                     })
                 }
 

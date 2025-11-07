@@ -21,7 +21,7 @@ interface Webtoon {
   genres: string[]
   views: number
   likes: number
-  rating: number
+  rating?: number | null
   status: string
   latestChapter?: number
   latestChapterTitle?: string
@@ -62,8 +62,8 @@ export default function Home() {
       setLoading(true)
 
       const [featuredRes, recentRes, genresRes] = await Promise.all([
-        fetch('/api/webtoons/featured?limit=5'),
-        fetch('/api/webtoons/recent?limit=10'),
+        fetch('/api/obra/featured?limit=5'),
+        fetch('/api/obra/recent?limit=10'),
         fetch('/api/genres')
       ])
 
@@ -100,13 +100,68 @@ export default function Home() {
 
   const loadGenreWebtoons = async (genre: string) => {
     try {
-      const res = await fetch(`/api/webtoons/by-genre?genre=${genre}&limit=10`)
+      const res = await fetch(`/api/obra/by-genre?genre=${genre}&limit=10`)
       if (res.ok) {
         const data = await res.json()
         setGenreWebtoons(data.webtoons || [])
       }
     } catch (error) {
       console.error('Error loading genre webtoons:', error)
+    }
+  }
+
+  const isValidImageSrc = (src?: string) => {
+    if (!src) return false
+    const trimmed = src.trim()
+    if (!trimmed) return false
+    // reject literal strings that sometimes come from malformed APIs
+    if (trimmed === 'null' || trimmed === 'undefined') return false
+    try {
+      // new URL accepts relative URLs when a base is provided (browser runtime)
+      if (typeof window !== 'undefined') {
+        new URL(trimmed, window.location.href)
+      } else {
+        // server-side fallback
+        new URL(trimmed, 'http://localhost')
+      }
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
+  const normalizeImageSrc = (src?: string) => {
+    if (!src) return null
+    let s = src.toString().trim()
+    if (!s) return null
+    if (s === 'null' || s === 'undefined') return null
+
+    // replace backslashes and encode spaces
+    s = s.replace(/\\/g, '/').replace(/\s+/g, '%20')
+
+    // data URLs are fine
+    if (s.startsWith('data:')) return s
+
+    // absolute protocol-relative or absolute
+    if (/^(https?:)?\/\//i.test(s)) return s.startsWith('//') ? window.location.protocol + s : s
+
+    // paths in the `public/` folder were stored as `public/...` by the importer; serve them from root '/'
+    if (s.startsWith('public/')) return '/' + s.replace(/^public\//, '')
+
+    // already root-relative
+    if (s.startsWith('/')) return s
+
+    // relative path like uploads/..., prefix with '/'
+    if (/^uploads\//i.test(s) || /^public_uploads\//i.test(s)) return '/' + s
+
+    // fallback: try constructing a URL to validate; if succeeds return as-is (will be resolved by browser)
+    try {
+      const url = typeof window !== 'undefined' ? new URL(s, window.location.href) : new URL(s, 'http://localhost')
+      // return pathname+search+hash if it's same origin and we want relative
+      if (url.origin === window.location.origin) return url.pathname + url.search + url.hash
+      return url.toString()
+    } catch (e) {
+      return null
     }
   }
 
@@ -147,67 +202,70 @@ export default function Home() {
         {/* Carrossel de Destaques */}
         {featuredWebtoons.length > 0 && (
           <div className="relative h-[500px] overflow-hidden">
-            {featuredWebtoons.map((webtoon, index) => (
-              <div
-                key={webtoon.id}
-                className={`absolute inset-0 transition-opacity duration-700 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
-                  }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1a1625] via-[#1a1625]/80 to-transparent z-10" />
-                {webtoon.coverImage ? (
-                  <Image
-                    src={webtoon.coverImage}
-                    alt={webtoon.title}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-pink-600/30" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1625] via-transparent to-transparent z-10" />
+            {featuredWebtoons.map((webtoon, index) => {
+              const imgSrc = normalizeImageSrc(webtoon.coverImage)
+              return (
+                <div
+                  key={webtoon.id}
+                  className={`absolute inset-0 transition-opacity duration-700 ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+                    }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#1a1625] via-[#1a1625]/80 to-transparent z-10" />
+                  {imgSrc ? (
+                    <Image
+                      src={imgSrc}
+                      alt={webtoon.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-pink-600/30" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1625] via-transparent to-transparent z-10" />
 
-                <div className="relative z-20 container mx-auto px-4 h-full flex items-center">
-                  <div className="max-w-2xl">
-                    <div className="flex gap-2 mb-4">
-                      {webtoon.genres.slice(0, 2).map((genre, i) => (
-                        <span key={i} className="px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-sm">
-                          {genre}
-                        </span>
-                      ))}
-                    </div>
-                    <h1 className="text-5xl font-bold text-white mb-4">{webtoon.title}</h1>
-                    <p className="text-xl text-white/80 mb-2">{formatAuthors(webtoon.author)}</p>
-                    <p className="text-lg text-white/70 mb-6 line-clamp-3">{webtoon.description}</p>
-                    <div className="flex gap-4 items-center mb-6">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                        <span className="text-white font-medium">{webtoon.rating.toFixed(1)}</span>
+                  <div className="relative z-20 container mx-auto px-4 h-full flex items-center">
+                    <div className="max-w-2xl">
+                      <div className="flex gap-2 mb-4">
+                        {webtoon.genres.slice(0, 2).map((genre, i) => (
+                          <span key={i} className="px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-sm">
+                            {genre}
+                          </span>
+                        ))}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-5 w-5 text-white/60" />
-                        <span className="text-white/80">{(webtoon.views / 1000000).toFixed(1)}M</span>
+                      <h1 className="text-5xl font-bold text-white mb-4">{webtoon.title}</h1>
+                      <p className="text-xl text-white/80 mb-2">{formatAuthors(webtoon.author)}</p>
+                      <p className="text-lg text-white/70 mb-6 line-clamp-3">{webtoon.description}</p>
+                      <div className="flex gap-4 items-center mb-6">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          <span className="text-white font-medium">{typeof webtoon.rating === 'number' ? webtoon.rating.toFixed(1) : '—'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-5 w-5 text-white/60" />
+                          <span className="text-white/80">{typeof webtoon.views === 'number' ? (webtoon.views / 1000000).toFixed(1) + 'M' : '—'}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <Button
-                        onClick={() => router.push(`/webtoon/${webtoon.slug}`)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-8"
-                      >
-                        <Play className="h-5 w-5 mr-2" />
-                        Ler Agora
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => router.push(`/webtoon/${webtoon.slug}`)}
-                        className="bg-transparent border-white/20 text-white hover:bg-white/10"
-                      >
-                        Ver Detalhes
-                      </Button>
+                      <div className="flex gap-4">
+                        <Button
+                          onClick={() => router.push(`/obra/${webtoon.slug}`)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+                        >
+                          <Play className="h-5 w-5 mr-2" />
+                          Ler Agora
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push(`/obra/${webtoon.slug}`)}
+                          className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                        >
+                          Ver Detalhes
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
             {/* Botões de Navegação */}
             {featuredWebtoons.length > 1 && (
@@ -252,35 +310,41 @@ export default function Home() {
 
           {recentlyUpdated.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {recentlyUpdated.map((webtoon) => (
-                <Link
-                  key={webtoon.id}
-                  href={`/webtoon/${webtoon.slug}/chapter/${webtoon.latestChapter || 1}`}
-                  className="group"
-                >
-                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 bg-white/5">
-                    {webtoon.coverImage ? (
-                      <Image
-                        src={webtoon.coverImage}
-                        alt={webtoon.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
-                        <span className="text-4xl">📖</span>
+              {recentlyUpdated.map((webtoon) => {
+                const imgSrc = normalizeImageSrc(webtoon.coverImage)
+                const latest = Number(webtoon.latestChapter)
+                const hasChapter = Number.isFinite(latest) && latest > 0
+                const href = hasChapter ? `/obra/${webtoon.slug}/chapter/${latest}` : `/obra/${webtoon.slug}`
+                return (
+                  <Link
+                    key={webtoon.id}
+                    href={href}
+                    className="group"
+                  >
+                    <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-2 bg-white/5">
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={webtoon.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                          <span className="text-4xl">📖</span>
+                        </div>
+                      )}
+                      <div className="absolute bottom-2 right-2 bg-black/70 rounded px-2 py-1 text-xs text-white">
+                        {hasChapter ? `Cap. ${latest}` : 'Novo'}
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2 bg-black/70 rounded px-2 py-1 text-xs text-white">
-                      Cap. {webtoon.latestChapter || '1'}
                     </div>
-                  </div>
-                  <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-purple-400 transition-colors">
-                    {webtoon.title}
-                  </h3>
-                  <p className="text-white/60 text-xs mt-1">{formatAuthors(webtoon.author)}</p>
-                </Link>
-              ))}
+                    <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-purple-400 transition-colors">
+                      {webtoon.title}
+                    </h3>
+                    <p className="text-white/60 text-xs mt-1">{formatAuthors(webtoon.author)}</p>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <div className="text-center text-white/60 py-8">
@@ -312,40 +376,43 @@ export default function Home() {
           {/* Webtoons do Gênero */}
           {genreWebtoons.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {genreWebtoons.map((webtoon) => (
-                <Link
-                  key={webtoon.id}
-                  href={`/webtoon/${webtoon.slug}`}
-                  className="group"
-                >
-                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 bg-white/5">
-                    {webtoon.coverImage ? (
-                      <Image
-                        src={webtoon.coverImage}
-                        alt={webtoon.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
-                        <span className="text-4xl">📖</span>
-                      </div>
-                    )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <div className="flex items-center gap-2 text-xs text-white/90">
-                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                        <span>{webtoon.rating.toFixed(1)}</span>
-                        <Eye className="h-3 w-3 ml-auto" />
-                        <span>{(webtoon.views / 1000).toFixed(0)}K</span>
+              {genreWebtoons.map((webtoon) => {
+                const imgSrc = normalizeImageSrc(webtoon.coverImage)
+                return (
+                  <Link
+                    key={webtoon.id}
+                    href={`/obra/${webtoon.slug}`}
+                    className="group"
+                  >
+                    <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-2 bg-white/5">
+                      {imgSrc ? (
+                        <Image
+                          src={imgSrc}
+                          alt={webtoon.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                          <span className="text-4xl">📖</span>
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                        <div className="flex items-center gap-2 text-xs text-white/90">
+                          <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                          <span>{typeof webtoon.rating === 'number' ? webtoon.rating.toFixed(1) : '—'}</span>
+                          <Eye className="h-3 w-3 ml-auto" />
+                          <span>{typeof webtoon.views === 'number' ? (webtoon.views / 1000).toFixed(0) + 'K' : '—'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-purple-400 transition-colors">
-                    {webtoon.title}
-                  </h3>
-                  <p className="text-white/60 text-xs mt-1">{formatAuthors(webtoon.author)}</p>
-                </Link>
-              ))}
+                    <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-purple-400 transition-colors">
+                      {webtoon.title}
+                    </h3>
+                    <p className="text-white/60 text-xs mt-1">{formatAuthors(webtoon.author)}</p>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
             <div className="text-center text-white/60 py-8">

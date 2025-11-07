@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 slug: true,
                 description: true,
                 coverImage: true,
+                bannerImage: true,
                 views: true,
                 likes: true,
                 rating: true,
@@ -62,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             slug: webtoon.slug,
             description: webtoon.description,
             coverImage: webtoon.coverImage,
+            bannerImage: webtoon.bannerImage,
             // include standardized authors array and legacy author string (first author)
             authors: webtoon.credits?.map(c => c.author) || [],
             author: webtoon.credits?.find(c => c.role === 'AUTHOR')?.author.name || null,

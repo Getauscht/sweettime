@@ -311,14 +311,25 @@ export default function ProfilePage() {
                                             ))}
 
                                             {!favoritesLoading && favorites.length === 0 && <p className="text-white/60">Nenhum favorito ainda</p>}
-                                            {!favoritesLoading && favorites.map(f => (
-                                                <div key={f.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
-                                                    <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden">
-                                                        <img src={f.webtoon.coverImage} alt={f.webtoon.title} className="w-full h-full object-cover" />
+                                            {!favoritesLoading && favorites.map(f => {
+                                                const work = f.item?.data
+                                                const workType = f.item?.type
+                                                if (!work) return null
+                                                return (
+                                                    <div key={f.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
+                                                        <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden relative">
+                                                            <img src={work.coverImage} alt={work.title} className="w-full h-full object-cover" />
+                                                            <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${workType === 'webtoon' 
+                                                                    ? 'bg-purple-500/80 text-white' 
+                                                                    : 'bg-blue-500/80 text-white'
+                                                                }`}>
+                                                                {workType === 'webtoon' ? 'W' : 'N'}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-white/80 text-sm mt-2">{work.title}</p>
                                                     </div>
-                                                    <p className="text-white/80 text-sm mt-2">{f.webtoon.title}</p>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 ),
@@ -335,14 +346,25 @@ export default function ProfilePage() {
                                             ))}
 
                                             {!historyLoading && history.length === 0 && <p className="text-white/60">Nenhum histórico ainda</p>}
-                                            {!historyLoading && history.map(h => (
-                                                <div key={h.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
-                                                    <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden">
-                                                        <img src={h.webtoon.coverImage} alt={h.webtoon.title} className="w-full h-full object-cover" />
+                                            {!historyLoading && history.map(h => {
+                                                const work = h.webtoon || h.novel
+                                                const workType = h.webtoon ? 'webtoon' : 'novel'
+                                                if (!work) return null
+                                                return (
+                                                    <div key={h.id} className="flex flex-col items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500" tabIndex={0}>
+                                                        <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden relative">
+                                                            <img src={work.coverImage} alt={work.title} className="w-full h-full object-cover" />
+                                                            <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${workType === 'webtoon' 
+                                                                    ? 'bg-purple-500/80 text-white' 
+                                                                    : 'bg-blue-500/80 text-white'
+                                                                }`}>
+                                                                {workType === 'webtoon' ? 'W' : 'N'}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-white/80 text-sm mt-2">{work.title}</p>
                                                     </div>
-                                                    <p className="text-white/80 text-sm mt-2">{h.webtoon.title}</p>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 ),

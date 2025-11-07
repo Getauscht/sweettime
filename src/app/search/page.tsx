@@ -78,7 +78,7 @@ export default function SearchPage() {
         const controller = new AbortController()
         const fetchPopular = async () => {
             try {
-                const res = await fetch('/api/webtoons/featured?limit=12', { signal: controller.signal })
+                const res = await fetch('/api/obra/featured?limit=12', { signal: controller.signal })
                 if (!res.ok) return
                 const data = await res.json()
                 setPopular(data.webtoons || [])
@@ -185,7 +185,7 @@ export default function SearchPage() {
                                     <div
                                         key={webtoon.id}
                                         className="group cursor-pointer"
-                                        onClick={() => router.push(`/webtoon/${webtoon.slug || webtoon.id}`)}
+                                        onClick={() => router.push(`/obra/${webtoon.slug || webtoon.id}`)}
                                     >
                                         <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-2">
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/90 transition-all" />
@@ -225,7 +225,7 @@ export default function SearchPage() {
                                 <div
                                     key={webtoon.id}
                                     className="group cursor-pointer"
-                                    onClick={() => router.push(`/webtoon/${webtoon.slug || webtoon.id}`)}
+                                    onClick={() => router.push(`/obra/${webtoon.slug || webtoon.id}`)}
                                 >
                                     <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 mb-2">
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/90 transition-all" />

@@ -21,9 +21,25 @@ export function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [pushSupported, setPushSupported] = useState(false)
+    const [pushEnabled, setPushEnabled] = useState(false)
+    const [pushLoading, setPushLoading] = useState(false)
 
     useEffect(() => {
         fetchNotifications()
+        // detect push support
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+            setPushSupported(true)
+                ; (async () => {
+                    try {
+                        const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+                        if (reg) {
+                            const sub = await reg.pushManager.getSubscription()
+                            setPushEnabled(Boolean(sub))
+                        }
+                    } catch (e) { /* ignore */ }
+                })()
+        }
     }, [])
 
     const fetchNotifications = async () => {
@@ -111,6 +127,74 @@ export function NotificationBell() {
         }
     }
 
+    // --- Web Push helpers ---
+    const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+        const rawData = window.atob(base64)
+        const outputArray = new Uint8Array(rawData.length)
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i)
+        }
+        return outputArray
+    }
+
+    const subscribeToPush = async () => {
+        if (!pushSupported) return
+        setPushLoading(true)
+        try {
+            // register service worker (noop if already registered)
+            const reg = await navigator.serviceWorker.register('/sw.js')
+
+            // fetch VAPID public key
+            const res = await fetch('/api/push/publicKey')
+            const { publicKey } = await res.json()
+            if (!publicKey) throw new Error('Missing VAPID public key')
+
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey),
+            })
+
+            await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sub)
+            })
+
+            setPushEnabled(true)
+        } catch (e) {
+            console.error('Failed to subscribe to push', e)
+            alert('Falha ao inscrever em notificações. Verifique se seu navegador suporta Web Push e se o site está em HTTPS.')
+        } finally {
+            setPushLoading(false)
+        }
+    }
+
+    const unsubscribeFromPush = async () => {
+        if (!pushSupported) return
+        setPushLoading(true)
+        try {
+            const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+            if (!reg) return
+            const sub = await reg.pushManager.getSubscription()
+            if (!sub) return
+
+            await fetch('/api/push/unsubscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: sub.endpoint })
+            })
+
+            await sub.unsubscribe()
+            setPushEnabled(false)
+        } catch (e) {
+            console.error('Failed to unsubscribe from push', e)
+        } finally {
+            setPushLoading(false)
+        }
+    }
+
     return (
         <div className="relative">
             <button
@@ -134,15 +218,26 @@ export function NotificationBell() {
                     <div className="absolute right-0 mt-2 w-96 bg-[#1a1625] border border-purple-600/20 rounded-lg shadow-xl z-50 max-h-[600px] overflow-hidden flex flex-col">
                         <div className="p-4 border-b border-purple-600/20 flex items-center justify-between">
                             <h3 className="font-semibold text-white">Notificações</h3>
-                            {unreadCount > 0 && (
-                                <button
-                                    onClick={markAllAsRead}
-                                    disabled={loading}
-                                    className="text-sm text-purple-400 hover:text-purple-300"
-                                >
-                                    Marcar todas como lidas
-                                </button>
-                            )}
+                            <div className="flex items-center gap-3">
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={markAllAsRead}
+                                        disabled={loading}
+                                        className="text-sm text-purple-400 hover:text-purple-300"
+                                    >
+                                        Marcar todas como lidas
+                                    </button>
+                                )}
+
+                                {/* Push enable/disable */}
+                                {pushSupported && (
+                                    pushEnabled ? (
+                                        <button onClick={unsubscribeFromPush} disabled={pushLoading} className="text-sm text-red-400 hover:text-red-300">Desativar push</button>
+                                    ) : (
+                                        <button onClick={subscribeToPush} disabled={pushLoading} className="text-sm text-purple-400 hover:text-purple-300">Ativar push</button>
+                                    )
+                                )}
+                            </div>
                         </div>
 
                         <div className="overflow-y-auto flex-1">

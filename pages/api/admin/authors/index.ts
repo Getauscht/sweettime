@@ -3,13 +3,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { generateSlug } from '@/lib/slug'
 import { isAdminSession } from '@/lib/auth/middleware'
 import { z } from 'zod'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions)
 
-    if (!session || !isAdminSession(session)) {
+    if (!session || !(await isAdminSession(session))) {
         return res.status(403).json({ error: 'Forbidden' })
     }
 
@@ -46,23 +47,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
         try {
-            const schema = z.object({ name: z.string().min(1), slug: z.string().min(1), bio: z.string().optional(), avatar: z.string().optional() })
+            // Only accept name/bio/avatar from client. Ignore any provided slug.
+            const schema = z.object({ name: z.string().min(1), bio: z.string().optional(), avatar: z.string().optional() })
             const parsed = schema.safeParse(req.body)
             if (!parsed.success) return res.status(400).json({ error: 'Invalid payload', details: parsed.error.format() })
 
-            const { name, slug, bio, avatar } = parsed.data
+            const { name, bio, avatar } = parsed.data
 
-            // Check if slug already exists
-            const existingAuthor = await prisma.author.findUnique({ where: { slug } })
-            if (existingAuthor) return res.status(400).json({ error: 'Author with this slug already exists' })
+            // Attempt create with server-side slug generation and retry on unique constraint
+            const maxCreateAttempts = 6
+            let lastError: any = null
+            for (let attempt = 0; attempt < maxCreateAttempts; attempt++) {
+                try {
+                    const slug = await generateSlug(prisma, name)
+                    const created = await prisma.$transaction(async (tx) => {
+                        const author = await tx.author.create({ data: { name, slug, bio, avatar } })
+                        await tx.activityLog.create({ data: { performedBy: session.user.id, action: 'create_author', entityType: 'Author', entityId: author.id, details: `Created author: ${name}` } })
+                        return author
+                    })
+                    return res.status(201).json({ author: created })
+                } catch (err: any) {
+                    lastError = err
+                    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+                        // slug collision -> retry
+                        continue
+                    }
+                    console.error('Error creating author (non-retry):', err)
+                    return res.status(500).json({ error: 'Failed to create author' })
+                }
+            }
 
-            const created = await prisma.$transaction(async (tx) => {
-                const author = await tx.author.create({ data: { name, slug, bio, avatar } })
-                await tx.activityLog.create({ data: { performedBy: session.user.id, action: 'create_author', entityType: 'Author', entityId: author.id, details: `Created author: ${name}` } })
-                return author
-            })
-
-            return res.status(201).json({ author: created })
+            console.error('Error creating author after retries:', lastError)
+            return res.status(500).json({ error: 'Failed to create author after retries' })
         } catch (error) {
             console.error('Error creating author:', error)
             return res.status(500).json({ error: 'Failed to create author' })

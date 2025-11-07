@@ -1,0 +1,31 @@
+{
+    "baseUrl": "https://sweetscan.org",
+    "listPages": [
+        "/manga",
+        "/manga/page/2"
+    ],
+    "selectors": {
+        "workLink": "a[href*='/manga/']",
+        "title": "div.post-title h1",
+        "author": "div.manga-authors a",
+        "description": "div.manga-summary p",
+        "genres": "div.manga-genres a",
+        "cover": "div.profile-manga.summary-layout-1",
+        "views": "div.manga-rate-view-comment div.item:nth-child(1).value",
+        "likes": "div.manga-rate-view-comment div.item:nth-child(0).value"
+    },
+    "workLinkRegex": "^/manga/[^/]+/?$",
+    "concurrency": 3,
+    "delayMs": 500,
+    "maxWorks": 100,
+    "useListPageOnly": true,
+    "listItem": {
+        "selector": "div.post-item",
+        "link": "a[href*='/manga/']",
+        "title": "h3.post-title",
+        "author": "div.post-meta a.author",
+        "cover": "div.profile-manga.summary-layout-1",
+        "views": "div.item.views",
+        "likes": "div.item.likes"
+    }
+}

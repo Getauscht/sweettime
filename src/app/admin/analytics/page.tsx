@@ -6,26 +6,26 @@ import { TrendingUp, Users, Eye, Heart, Download } from 'lucide-react'
 
 export default function AnalyticsPage() {
     const metrics = [
-        { label: 'Total Views', value: '2.4M', change: '+12.5%', icon: Eye },
-        { label: 'Active Users', value: '85K', change: '+8.2%', icon: Users },
-        { label: 'Total Likes', value: '456K', change: '+15.3%', icon: Heart },
-        { label: 'New Subscribers', value: '12.3K', change: '+5.7%', icon: TrendingUp },
+        { label: 'Visualizações totais', value: '2,4M', change: '+12,5%', icon: Eye },
+        { label: 'Usuários ativos', value: '85K', change: '+8,2%', icon: Users },
+        { label: 'Curtidas totais', value: '456K', change: '+15,3%', icon: Heart },
+        { label: 'Novos inscritos', value: '12,3K', change: '+5,7%', icon: TrendingUp },
     ]
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Reporting & Analytics</h1>
-                    <p className="text-white/60 mt-2">Detailed insights and performance metrics</p>
+                    <h1 className="text-3xl font-bold text-white">Relatórios & Analytics</h1>
+                    <p className="text-white/60 mt-2">Insights detalhados e métricas de desempenho</p>
                 </div>
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                     <Download className="h-4 w-4 mr-2" />
-                    Export Report
+                    Exportar relatório
                 </Button>
             </div>
 
-            {/* Metrics Grid */}
+            {/* Métricas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {metrics.map((metric) => {
                     const Icon = metric.icon
@@ -42,25 +42,25 @@ export default function AnalyticsPage() {
                 })}
             </div>
 
-            {/* Charts Placeholder */}
+            {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="bg-[#0f0b14] border-white/10 p-6">
-                    <h3 className="text-white font-semibold text-lg mb-4">Views Over Time</h3>
+                    <h3 className="text-white font-semibold text-lg mb-4">Visualizações ao longo do tempo</h3>
                     <div className="h-64 bg-white/5 rounded-lg flex items-center justify-center">
-                        <span className="text-white/40">Chart visualization would go here</span>
+                        <span className="text-white/40">Visualização do gráfico aqui</span>
                     </div>
                 </Card>
 
                 <Card className="bg-[#0f0b14] border-white/10 p-6">
-                    <h3 className="text-white font-semibold text-lg mb-4">Top Performing Webtoons</h3>
+                    <h3 className="text-white font-semibold text-lg mb-4">Webtoons de maior desempenho</h3>
                     <div className="space-y-4">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <span className="text-white/60">#{i}</span>
                                     <div>
-                                        <div className="text-white font-medium">Webtoon Title {i}</div>
-                                        <div className="text-white/60 text-sm">{(Math.random() * 100).toFixed(1)}K views</div>
+                                        <div className="text-white font-medium">Webtoon {i}</div>
+                                        <div className="text-white/60 text-sm">{(Math.random() * 100).toFixed(1)}K visualizações</div>
                                     </div>
                                 </div>
                                 <TrendingUp className="h-4 w-4 text-green-400" />
@@ -70,11 +70,11 @@ export default function AnalyticsPage() {
                 </Card>
             </div>
 
-            {/* Additional Stats */}
+            {/* Estatísticas adicionais */}
             <Card className="bg-[#0f0b14] border-white/10 p-6">
-                <h3 className="text-white font-semibold text-lg mb-4">User Demographics</h3>
+                <h3 className="text-white font-semibold text-lg mb-4">Demografia dos usuários</h3>
                 <div className="h-48 bg-white/5 rounded-lg flex items-center justify-center">
-                    <span className="text-white/40">Demographics chart would go here</span>
+                    <span className="text-white/40">Gráfico de demografia aqui</span>
                 </div>
             </Card>
         </div>

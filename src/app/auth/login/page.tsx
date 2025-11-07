@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Github, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -24,6 +24,10 @@ export default function LoginPage() {
     const checkingRef = useRef<number | null>(null)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showMagicLinkModal, setShowMagicLinkModal] = useState(false)
+    const [magicLinkEmail, setMagicLinkEmail] = useState('')
+    const [magicLinkMessage, setMagicLinkMessage] = useState('')
+    const [magicLinkLoading, setMagicLinkLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -58,13 +62,41 @@ export default function LoginPage() {
         }
     }
 
-    const handleSocialLogin = async (provider: 'google' | 'github') => {
+    const handleSocialLogin = async (provider: 'google' | 'discord') => {
         setLoading(true)
         try {
             await signIn(provider, { callbackUrl: callbackUrlParam })
         } catch (err) {
             setError('Erro ao fazer login')
             setLoading(false)
+        }
+    }
+
+    const handleMagicLinkRequest = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setMagicLinkMessage('')
+        setMagicLinkLoading(true)
+
+        try {
+            const response = await fetch('/api/auth/magic-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: magicLinkEmail }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setMagicLinkMessage(data.message || 'Se o email existir em nosso sistema, você receberá instruções em breve.')
+            } else {
+                setMagicLinkMessage(data.error || 'Erro ao enviar link de recuperação')
+            }
+        } catch (error) {
+            setMagicLinkMessage('Erro ao processar solicitação')
+        } finally {
+            setMagicLinkLoading(false)
         }
     }
 
@@ -196,12 +228,12 @@ export default function LoginPage() {
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={() => handleSocialLogin('github')}
+                                onClick={() => handleSocialLogin('discord')}
                                 disabled={loading}
                                 className="bg-white/5 border-white/10 text-white hover:bg-white/10"
                             >
-                                <Github className="mr-2 h-4 w-4" />
-                                GitHub
+                                <img src="/discord-icon.svg" alt="Discord" className="mr-2 h-4 w-4" />
+                                Discord
                             </Button>
                         </div>
                     </CardContent>
@@ -212,8 +244,77 @@ export default function LoginPage() {
                                 Criar conta
                             </Link>
                         </div>
+                        <div className="text-sm text-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowMagicLinkModal(true)}
+                                className="text-purple-400 hover:text-purple-300 underline"
+                            >
+                                Recuperar senha legada
+                            </button>
+                        </div>
                     </CardFooter>
                 </Card>
+
+                {/* Magic Link Modal */}
+                {showMagicLinkModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                        <Card className="w-full max-w-md bg-[#0f0b14] border-white/10">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-bold text-white">Recuperar Senha Legada</CardTitle>
+                                <CardDescription className="text-white/60">
+                                    Digite seu email para receber um link de recuperação
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {magicLinkMessage && (
+                                    <Alert className="mb-4 bg-purple-600/20 border-purple-600/50">
+                                        <AlertDescription className="text-white">
+                                            {magicLinkMessage}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                                <form onSubmit={handleMagicLinkRequest} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="magicLinkEmail" className="text-white">Email</Label>
+                                        <Input
+                                            id="magicLinkEmail"
+                                            type="email"
+                                            placeholder="seu@email.com"
+                                            value={magicLinkEmail}
+                                            onChange={(e) => setMagicLinkEmail(e.target.value)}
+                                            required
+                                            disabled={magicLinkLoading}
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="submit"
+                                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                                            disabled={magicLinkLoading}
+                                        >
+                                            {magicLinkLoading ? 'Enviando...' : 'Enviar Link'}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setShowMagicLinkModal(false)
+                                                setMagicLinkMessage('')
+                                                setMagicLinkEmail('')
+                                            }}
+                                            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                                            disabled={magicLinkLoading}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </div>
         </>
     )

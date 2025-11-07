@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { GenericMarkdownRenderer } from '@/components/GenericMarkdownRenderer'
 
 export default function GroupsPage() {
-    const [groups, setGroups] = useState<{ id: string; name: string; description?: string; _count?: { members?: number; webtoons?: number } }[]>([])
+    const [groups, setGroups] = useState<{ id: string; name: string; description?: string; _count?: { members?: number; webtoons?: number; novels?: number; totalObras?: number } }[]>([])
     const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -25,14 +25,25 @@ export default function GroupsPage() {
             if (res.ok) {
                 const data = await res.json()
                 const groupsRaw = data.groups || []
-                // normalize webtoonGroups junction shape to expected webtoons/_count.webtoons
+                // normalize webtoonGroups and novelGroups junction shape to expected counts
                 const normalized = groupsRaw.map((g: any) => {
+                    const webtoonCount = g.webtoonGroups?.length || g._count?.webtoons || g._count?.webtoonGroups || 0
+                    const novelCount = g.novelGroups?.length || g._count?.novels || g._count?.novelGroups || 0
+                    
                     if (g.webtoonGroups) {
                         const webtoons = g.webtoonGroups.map((wg: any) => wg.webtoon).filter(Boolean)
                         g.webtoons = webtoons
-                        g._count = g._count || {}
-                        g._count.webtoons = g._count.webtoons || webtoons.length
                     }
+                    if (g.novelGroups) {
+                        const novels = g.novelGroups.map((ng: any) => ng.novel).filter(Boolean)
+                        g.novels = novels
+                    }
+                    
+                    g._count = g._count || {}
+                    g._count.webtoons = webtoonCount
+                    g._count.novels = novelCount
+                    g._count.totalObras = webtoonCount + novelCount
+                    
                     return g
                 })
                 setGroups(normalized)
@@ -51,17 +62,17 @@ export default function GroupsPage() {
 
     return (
         <div className="space-y-8">
-            {/* Header Section */}
+            {/* Cabeçalho */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">Grupos de Scanlation</h1>
                     <p className="text-white/60">Descubra e participe de comunidades de scanlation</p>
                 </div>
                 <div className="flex gap-2">
-                    <Link href="/groups/webtoons">
+                    <Link href="/painel/groups/obras">
                         <Button variant="outline" className="gap-2 border-purple-500/30 text-purple-300 hover:bg-purple-500/10">
                             <BookOpen className="h-4 w-4" />
-                            Explorar Webtoons
+                            Explorar Obras
                         </Button>
                     </Link>
                     <Link href="/groups/new">
@@ -73,18 +84,18 @@ export default function GroupsPage() {
                 </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Barra de busca */}
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                 <Input
-                    placeholder="Pesquisar grupos..."
+                    placeholder="Buscar grupos..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 bg-[#1a1625] border-white/10 text-white placeholder:text-white/40"
                 />
             </div>
 
-            {/* Groups Grid */}
+            {/* Grid de grupos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading && (
                     <div className="col-span-full flex justify-center py-12">
@@ -129,8 +140,18 @@ export default function GroupsPage() {
                                 </div>
                                 <div className="flex items-center gap-1 text-white/60">
                                     <BookOpen className="h-4 w-4" />
-                                    <span>{g._count?.webtoons || 0} webtoons</span>
+                                    <span>{g._count?.totalObras || 0} obras</span>
                                 </div>
+                                {(g._count?.webtoons || 0) > 0 && (
+                                    <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-300">
+                                        {g._count?.webtoons}W
+                                    </Badge>
+                                )}
+                                {(g._count?.novels || 0) > 0 && (
+                                    <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-300">
+                                        {g._count?.novels}N
+                                    </Badge>
+                                )}
                             </div>
 
                             <div className="flex gap-2">

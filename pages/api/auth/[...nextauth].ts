@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import GitHubProvider from "next-auth/providers/github"
+import DiscordProvider from "next-auth/providers/discord"
 import EmailProvider from "next-auth/providers/email"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
@@ -29,10 +29,16 @@ export const authOptions: NextAuthOptions = {
 
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
+                    include: { role: true },
                 })
 
                 if (!user || !user.password) {
                     throw new Error("Credenciais inválidas")
+                }
+
+                // Check if user must change password - block credential login
+                if (user.mustChangePassword) {
+                    throw new Error("Sua conta requer troca de senha. Use o botão 'Recuperar senha legada' para receber um link por email.")
                 }
 
                 const isValidPassword = await verifyPassword(
@@ -85,9 +91,9 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         }),
-        GitHubProvider({
-            clientId: process.env.GITHUB_CLIENT_ID || "",
-            clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+        DiscordProvider({
+            clientId: process.env.DISCORD_CLIENT_ID || "",
+            clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
         }),
         // Email (magic link) sign-in
         EmailProvider({
@@ -133,6 +139,14 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id
                 token.emailVerified = user.emailVerified
+                
+                // Fetch user's mustChangePassword status
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: user.id },
+                    select: { mustChangePassword: true },
+                })
+                
+                token.mustChangePassword = dbUser?.mustChangePassword || false
             }
             return token
         },
@@ -140,6 +154,7 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 session.user.id = token.id as string
                 session.user.emailVerified = token.emailVerified as Date | null
+                    ; (session.user as any).mustChangePassword = token.mustChangePassword || false
             }
             return session
         },

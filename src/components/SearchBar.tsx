@@ -159,7 +159,7 @@ export default function SearchBar({ onClose, autoFocus = false }: SearchBarProps
 
     const handleSelectResult = (result: ResultItem) => {
         if ((result as WebtoonResult).type === 'webtoon') {
-            router.push(`/webtoon/${(result as WebtoonResult).slug}`)
+            router.push(`/obra/${(result as WebtoonResult).slug}`)
         } else if ((result as AuthorResult).type === 'author') {
             router.push(`/author/${(result as AuthorResult).slug}`)
         } else if ((result as GenreResult).type === 'genre') {

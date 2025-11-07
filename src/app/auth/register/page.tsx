@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Github, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { signIn } from 'next-auth/react'
 
 export default function RegisterPage() {
@@ -57,7 +57,7 @@ export default function RegisterPage() {
         }
     }
 
-    const handleSocialRegister = async (provider: 'google' | 'github') => {
+    const handleSocialRegister = async (provider: 'google' | 'discord') => {
         setLoading(true)
         try {
             await signIn(provider, { callbackUrl: '/' })
@@ -178,12 +178,12 @@ export default function RegisterPage() {
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={() => handleSocialRegister('github')}
+                                onClick={() => handleSocialRegister('discord')}
                                 disabled={loading || success}
                                 className="bg-white/5 border-white/10 text-white hover:bg-white/10"
                             >
-                                <Github className="mr-2 h-4 w-4" />
-                                GitHub
+                                <img src="/discord-icon.svg" alt="Discord" className="mr-2 h-4 w-4" />
+                                Discord
                             </Button>
                         </div>
                     </CardContent>

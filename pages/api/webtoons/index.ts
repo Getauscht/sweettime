@@ -9,6 +9,7 @@ const createWebtoonSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().max(500).optional().nullable(),
   coverImage: z.string().optional().nullable(),
+  bannerImage: z.string().optional().nullable(),
   status: z.enum(['ongoing', 'completed', 'hiatus', 'cancelled']).default('ongoing'),
   genreIds: z.array(z.string()).min(1),
 })
@@ -86,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           slug,
           description: parsed.description || null,
           coverImage: parsed.coverImage || null,
+          bannerImage: parsed.bannerImage || null,
           status: parsed.status,
           genres: {
             create: parsed.genreIds.map((genreId) => ({

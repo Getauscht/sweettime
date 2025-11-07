@@ -33,6 +33,7 @@ export default function CreateWebtoonPage() {
         authorId: '',
         genreIds: [] as string[],
         coverImage: '',
+        bannerImage: '',
         status: 'ongoing',
     })
 
@@ -94,15 +95,62 @@ export default function CreateWebtoonPage() {
         }
     }
 
+    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setUploading(true)
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'banner')
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setFormData(prev => ({ ...prev, bannerImage: data.url }))
+            } else {
+                toast('Failed to upload image', 'error')
+            }
+        } catch (error) {
+            console.error('Upload error:', error)
+            toast('Failed to upload image', 'error')
+        } finally {
+            setUploading(false)
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
         try {
+            // API expects `authorIds` as an array. Ensure we send it.
+            if (!formData.authorId) {
+                toast('Select an author before submitting', 'error')
+                setLoading(false)
+                return
+            }
+
+            const payload = {
+                title: formData.title,
+                description: formData.description || undefined,
+                authorIds: [formData.authorId],
+                genreIds: formData.genreIds && formData.genreIds.length > 0 ? formData.genreIds : undefined,
+                coverImage: formData.coverImage || undefined,
+                bannerImage: formData.bannerImage || undefined,
+                status: formData.status || undefined,
+                // scanlationGroupId intentionally omitted here (admin UI can add later)
+            }
+
             const response = await fetch('/api/admin/webtoons', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             })
 
             if (response.ok) {
@@ -245,6 +293,45 @@ export default function CreateWebtoonPage() {
 
                     {/* Cover Image */}
                     <div className="space-y-2">
+                        <Label className="text-white">Banner Image (16:9)</Label>
+                        <div className="border-2 border-dashed border-white/10 rounded-lg p-8 mb-4">
+                            {formData.bannerImage ? (
+                                <div className="relative text-center">
+                                    <img
+                                        src={formData.bannerImage}
+                                        alt="Banner preview"
+                                        className="w-full max-h-44 object-cover rounded-lg mx-auto"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setFormData({ ...formData, bannerImage: '' })}
+                                        className="mt-4 text-white hover:bg-white/10"
+                                    >
+                                        Remove Banner
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
+                                    <label className="cursor-pointer">
+                                        <span className="text-purple-400 hover:text-purple-300">
+                                            {uploading ? 'Uploading...' : 'Upload a banner'}
+                                        </span>
+                                        <span className="text-white/60"> or drag and drop</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleBannerUpload}
+                                            disabled={uploading}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                    <p className="text-white/40 text-sm mt-2">PNG, JPG up to 10MB (recommended 16:9)</p>
+                                </div>
+                            )}
+                        </div>
+
                         <Label className="text-white">Cover Image</Label>
                         <div className="border-2 border-dashed border-white/10 rounded-lg p-8">
                             {formData.coverImage ? (

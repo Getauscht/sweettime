@@ -14,7 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
             const group = await prisma.scanlationGroup.findUnique({
                 where: { id },
-                include: { members: { include: { user: { select: { id: true, name: true, email: true, image: true } } } }, webtoonGroups: { take: 20, include: { webtoon: true } } },
+                include: { 
+                    members: { include: { user: { select: { id: true, name: true, email: true, image: true } } } },
+                    webtoonGroups: { take: 20, include: { webtoon: true } },
+                    novelGroups: { take: 20, include: { novel: true } },
+                },
             })
             if (!group) return res.status(404).json({ error: 'Group not found' })
             return res.status(200).json({ group })

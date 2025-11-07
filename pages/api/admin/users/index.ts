@@ -91,7 +91,7 @@ export const GET = withPermission(
 
 export const PATCH = withPermission(
     PERMISSIONS.USERS_EDIT,
-    async (req: Request, { userId }) => {
+    async (req: Request, { userId: actorUserId }: { userId: string }) => {
         try {
             const body = (await req.json()) as Partial<Record<string, unknown>> & { userId?: string }
             const { userId, ...updates } = body
@@ -106,7 +106,7 @@ export const PATCH = withPermission(
 
             const updated = await prisma.$transaction(async (tx) => {
                 const user = await tx.user.update({ where: { id: userId }, data: updates as UserUpdateInput, include: { role: true } })
-                await tx.activityLog.create({ data: { performedBy: userId || 'system', action: 'update_user', entityType: 'User', entityId: user.id, details: `Updated user: ${user.email}` } })
+                await tx.activityLog.create({ data: { performedBy: actorUserId || 'system', action: 'update_user', entityType: 'User', entityId: user.id, details: `Updated user: ${user.email}` } })
                 return user
             })
 

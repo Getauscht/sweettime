@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Plus, Edit, Trash2, Upload } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+const DynamicMarkdownEditor = dynamic(() => import('@/components/MarkdownEditor'), { ssr: false })
 
 interface Chapter {
     id: string
@@ -30,6 +33,7 @@ export default function EditWebtoonPage() {
         slug: '',
         description: '',
         coverImage: '',
+        bannerImage: '',
         status: 'ongoing',
         genreIds: [] as string[],
         authorIds: [] as string[],
@@ -41,11 +45,15 @@ export default function EditWebtoonPage() {
     const [groupsForClaim, setGroupsForClaim] = useState<{ id: string; name: string }[]>([])
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [claiming, setClaiming] = useState(false)
-    const [newChapter, setNewChapter] = useState({
+    const [newChapter, setNewChapter] = useState<any>({
         number: '',
         title: '',
         content: [] as string[],
+        markdown: '',
     })
+    const [editingChapterId, setEditingChapterId] = useState<string | null>(null)
+    const [editingChapter, setEditingChapter] = useState<any>({ number: '', title: '', content: [] as string[], markdown: '' })
+    const [editorMode, setEditorMode] = useState<'images' | 'markdown'>('images')
     const [uploadingChapter, setUploadingChapter] = useState(false)
 
     // Simple local toast helper (project doesn't expose global toast in codebase)
@@ -77,6 +85,7 @@ export default function EditWebtoonPage() {
                     slug: data.webtoon.slug || '',
                     description: data.webtoon.description || '',
                     coverImage: data.webtoon.coverImage || '',
+                    bannerImage: data.webtoon.bannerImage || '',
                     status: data.webtoon.status || 'ongoing',
                     genreIds: (data.webtoon.genres || []).map((g: any) => g.id),
                     authorIds: (data.webtoon.credits || []).filter((c: any) => c.role === 'AUTHOR').map((c: any) => c.authorId),
@@ -157,6 +166,7 @@ export default function EditWebtoonPage() {
             slug: form.slug,
             description: form.description,
             coverImage: form.coverImage,
+            bannerImage: form.bannerImage,
             status: form.status,
             genreIds: form.genreIds,
             authorIds: form.authorIds,
@@ -190,6 +200,49 @@ export default function EditWebtoonPage() {
             showToast('Upload failed', 'error')
         } finally {
             setSaving(false)
+        }
+    }
+
+    // Banner upload state and handlers
+    const [bannerFile, setBannerFile] = useState<File | null>(null)
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+    const [uploadingBanner, setUploadingBanner] = useState(false)
+
+    useEffect(() => {
+        return () => {
+            if (bannerPreview) {
+                try { URL.revokeObjectURL(bannerPreview) } catch { }
+            }
+        }
+    }, [bannerPreview])
+
+    const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0] ?? null
+        setBannerFile(f)
+        if (f) setBannerPreview(URL.createObjectURL(f))
+    }
+
+    const uploadAndSaveBanner = async () => {
+        if (!bannerFile) return showToast('Select a banner file first', 'error')
+        setUploadingBanner(true)
+        try {
+            const fd = new FormData()
+            fd.append('file', bannerFile)
+            fd.append('type', 'banner')
+
+            const res = await fetch('/api/upload', { method: 'POST', body: fd })
+            if (!res.ok) throw new Error('Failed to upload banner')
+            const data = await res.json()
+
+            // save via existing update flow
+            await handleUpdate({ bannerImage: data.url })
+            setBannerFile(null)
+            setBannerPreview(null)
+        } catch (err) {
+            console.error(err)
+            showToast(err instanceof Error ? err.message : 'Failed to upload banner', 'error')
+        } finally {
+            setUploadingBanner(false)
         }
     }
 
@@ -241,6 +294,8 @@ export default function EditWebtoonPage() {
             const formData = new FormData()
             formData.append('file', file)
             formData.append('type', 'chapter')
+            // include webtoonId so server can validate chapter uploads against this webtoon
+            if (id) formData.append('webtoonId', id)
 
             try {
                 const response = await fetch('/api/upload', {
@@ -257,9 +312,45 @@ export default function EditWebtoonPage() {
             }
         }
 
-        setNewChapter(prev => ({
+        setNewChapter((prev: any) => ({
             ...prev,
             content: [...prev.content, ...uploadedUrls],
+        }))
+        setUploadingChapter(false)
+    }
+
+    const handleEditChapterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+
+        setUploadingChapter(true)
+        const uploadedUrls: string[] = []
+
+        for (const file of Array.from(files)) {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('type', 'chapter')
+            // include webtoonId so server can validate chapter uploads against this webtoon
+            if (id) formData.append('webtoonId', id)
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    uploadedUrls.push(data.url)
+                }
+            } catch (error) {
+                console.error('Upload error:', error)
+            }
+        }
+
+        setEditingChapter((prev: any) => ({
+            ...prev,
+            content: [...(prev.content || []), ...uploadedUrls],
         }))
         setUploadingChapter(false)
     }
@@ -271,18 +362,25 @@ export default function EditWebtoonPage() {
         }
 
         try {
+            // When in markdown mode, send the markdown as the chapter "content" so the reader will render it as text.
+            const payload = {
+                webtoonId: id,
+                number: typeof newChapter.number === 'string' ? parseInt(newChapter.number) : newChapter.number,
+                title: newChapter.title,
+                // If editorMode is markdown, place the markdown string into `content` (Chapter.content is JSON column,
+                // but the reader treats string content as markdown). Otherwise send the array of image URLs.
+                content: editorMode === 'markdown' ? (newChapter.markdown || '') : (newChapter.content || []),
+            }
+
             const response = await fetch('/api/admin/chapters', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    webtoonId: id,
-                    ...newChapter,
-                }),
+                body: JSON.stringify(payload),
             })
 
             if (response.ok) {
                 setShowChapterModal(false)
-                setNewChapter({ number: '', title: '', content: [] })
+                setNewChapter({ number: '', title: '', content: [], markdown: '' })
                 fetchChapters()
             } else {
                 const error = await response.json()
@@ -307,6 +405,50 @@ export default function EditWebtoonPage() {
             }
         } catch (error) {
             console.error('Error deleting chapter:', error)
+        }
+    }
+
+    const openEditModal = (chapter: any) => {
+        setEditingChapterId(chapter.id)
+        // Pre-fill editing state with available chapter data
+        setEditingChapter({
+            number: chapter.number?.toString?.() ?? chapter.number ?? '',
+            title: chapter.title ?? '',
+            content: chapter.content ?? [],
+            markdown: chapter.markdown ?? '',
+        })
+    }
+
+    const handleSaveEditedChapter = async () => {
+        if (!editingChapterId) return
+        if (!editingChapter.number) { showToast('Please fill in chapter number', 'error'); return }
+
+        try {
+            const payload: any = {
+                chapterId: editingChapterId,
+                number: typeof editingChapter.number === 'string' ? parseInt(editingChapter.number) : editingChapter.number,
+                title: editingChapter.title,
+                content: editingChapter.content,
+                markdown: editingChapter.markdown,
+            }
+
+            const res = await fetch('/api/admin/chapters', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+
+            if (res.ok) {
+                setEditingChapterId(null)
+                setEditingChapter({ number: '', title: '', content: [], markdown: '' })
+                fetchChapters()
+            } else {
+                const err = await res.json().catch(() => ({}))
+                showToast(err.error || 'Failed to update chapter', 'error')
+            }
+        } catch (err) {
+            console.error('Error updating chapter', err)
+            showToast('Failed to update chapter', 'error')
         }
     }
 
@@ -460,6 +602,35 @@ export default function EditWebtoonPage() {
                         </div>
                     </div>
 
+                    {/* Banner image */}
+                    <div>
+                        <Label className="text-white">Banner (16:9) - usado como background público</Label>
+                        <div className="border-2 border-dashed border-white/10 rounded-lg p-6 mt-2">
+                            {form.bannerImage || bannerPreview ? (
+                                <div className="relative">
+                                    <img src={bannerPreview || form.bannerImage} alt="Banner" className="w-full max-h-44 object-cover rounded-lg" />
+                                    <div className="mt-3 flex gap-2">
+                                        <label className="cursor-pointer px-4 py-2 bg-white/5 rounded text-white">
+                                            Alterar
+                                            <input type="file" accept="image/*" onChange={handleBannerFileChange} className="hidden" />
+                                        </label>
+                                        <Button variant="ghost" onClick={async () => { if (!confirm('Remove banner?')) return; await handleUpdate({ bannerImage: null }); showToast('Banner removido', 'success') }} className="text-white hover:bg-white/10">Remover</Button>
+                                        <Button onClick={uploadAndSaveBanner} disabled={!bannerFile || uploadingBanner} className="bg-purple-600 hover:bg-purple-700 text-white">{uploadingBanner ? 'Enviando...' : 'Upload & Salvar'}</Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
+                                    <label className="cursor-pointer">
+                                        <span className="text-purple-400 hover:text-purple-300">Escolher banner</span>
+                                        <input type="file" accept="image/*" onChange={handleBannerFileChange} className="hidden" />
+                                    </label>
+                                    <p className="text-white/40 text-sm mt-2">PNG, JPG up to 10MB (recommended 16:9)</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Genres */}
                     <div>
                         <Label className="text-white">Gêneros</Label>
@@ -556,6 +727,7 @@ export default function EditWebtoonPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
+                                                    onClick={() => openEditModal(chapter)}
                                                     className="text-white hover:bg-white/10"
                                                 >
                                                     <Edit className="h-4 w-4" />
@@ -607,27 +779,45 @@ export default function EditWebtoonPage() {
                             </div>
 
                             <div>
-                                <Label className="text-white">Páginas do Capítulo</Label>
-                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 mt-2">
-                                    <div className="text-center">
-                                        <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
-                                        <label className="cursor-pointer">
-                                            <span className="text-purple-400 hover:text-purple-300">
-                                                {uploadingChapter ? 'Enviando...' : 'Fazer upload das páginas do capítulo'}
-                                            </span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                onChange={handleChapterUpload}
-                                                disabled={uploadingChapter}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                        <p className="text-white/40 text-sm mt-2">
-                                            {newChapter.content.length} páginas enviadas
-                                        </p>
+                                <Label className="text-white">Content</Label>
+                                <div className="mt-2">
+                                    <div className="flex gap-2 mb-3">
+                                        <button type="button" onClick={() => setEditorMode('images')} className={`px-3 py-1 rounded ${editorMode === 'images' ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/60'}`}>Images</button>
+                                        <button type="button" onClick={() => setEditorMode('markdown')} className={`px-3 py-1 rounded ${editorMode === 'markdown' ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/60'}`}>Markdown</button>
                                     </div>
+
+                                    {editorMode === 'images' ? (
+                                        <div className="border-2 border-dashed border-white/10 rounded-lg p-6">
+                                            <div className="text-center">
+                                                <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
+                                                <label className="cursor-pointer">
+                                                    <span className="text-purple-400 hover:text-purple-300">
+                                                        {uploadingChapter ? 'Enviando...' : 'Fazer upload das páginas do capítulo'}
+                                                    </span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        onChange={handleChapterUpload}
+                                                        disabled={uploadingChapter}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                                <p className="text-white/40 text-sm mt-2">
+                                                    {newChapter.content.length} páginas enviadas
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-white/10 rounded-lg p-4">
+                                            {/* Lazy load editor to avoid SSR issues */}
+                                            <React.Suspense fallback={<div className="text-white/60">Loading editor...</div>}>
+                                                {/* Dynamically import component to avoid SSR errors */}
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <DynamicMarkdownEditor value={newChapter.markdown} onChange={(v: string) => setNewChapter((prev: any) => ({ ...prev, markdown: v }))} placeholder="Write chapter content in Markdown..." />
+                                            </React.Suspense>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -636,7 +826,7 @@ export default function EditWebtoonPage() {
                                     variant="ghost"
                                     onClick={() => {
                                         setShowChapterModal(false)
-                                        setNewChapter({ number: '', title: '', content: [] })
+                                        setNewChapter({ number: '', title: '', content: [], markdown: '' })
                                     }}
                                     className="text-white hover:bg-white/10"
                                 >
@@ -649,6 +839,91 @@ export default function EditWebtoonPage() {
                                 >
                                     Criar Capítulo
                                 </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+            {/* Edit Chapter Modal */}
+            {editingChapterId && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="bg-[#0f0b14] border-white/10 w-full max-w-2xl p-6">
+                        <h2 className="text-2xl font-bold text-white mb-6">Editar Capítulo</h2>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="editChapterNumber" className="text-white">Número do Capítulo</Label>
+                                    <Input
+                                        id="editChapterNumber"
+                                        type="number"
+                                        value={editingChapter.number}
+                                        onChange={(e) => setEditingChapter({ ...editingChapter, number: e.target.value })}
+                                        className="bg-white/5 border-white/10 text-white mt-2"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="editChapterTitle" className="text-white">Título do Capítulo</Label>
+                                    <Input
+                                        id="editChapterTitle"
+                                        value={editingChapter.title}
+                                        onChange={(e) => setEditingChapter({ ...editingChapter, title: e.target.value })}
+                                        className="bg-white/5 border-white/10 text-white mt-2"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="text-white">Content</Label>
+                                <div className="mt-2">
+                                    <div className="flex gap-2 mb-3">
+                                        <button type="button" onClick={() => setEditorMode('images')} className={`px-3 py-1 rounded ${editorMode === 'images' ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/60'}`}>Images</button>
+                                        <button type="button" onClick={() => setEditorMode('markdown')} className={`px-3 py-1 rounded ${editorMode === 'markdown' ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/60'}`}>Markdown</button>
+                                    </div>
+
+                                    {editorMode === 'images' ? (
+                                        <div className="border-2 border-dashed border-white/10 rounded-lg p-6">
+                                            <div className="text-center">
+                                                <Upload className="h-12 w-12 text-white/40 mx-auto mb-4" />
+                                                <label className="cursor-pointer">
+                                                    <span className="text-purple-400 hover:text-purple-300">
+                                                        {uploadingChapter ? 'Enviando...' : 'Fazer upload das páginas do capítulo'}
+                                                    </span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        onChange={handleEditChapterUpload}
+                                                        disabled={uploadingChapter}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                                <p className="text-white/40 text-sm mt-2">
+                                                    {editingChapter.content?.length ?? 0} páginas enviadas
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-white/10 rounded-lg p-4">
+                                            <React.Suspense fallback={<div className="text-white/60">Loading editor...</div>}>
+                                                <DynamicMarkdownEditor value={editingChapter.markdown} onChange={(v: string) => setEditingChapter((prev: any) => ({ ...prev, markdown: v }))} placeholder="Write chapter content in Markdown..." />
+                                            </React.Suspense>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 justify-end pt-4">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setEditingChapterId(null)
+                                        setEditingChapter({ number: '', title: '', content: [], markdown: '' })
+                                    }}
+                                    className="text-white hover:bg-white/10"
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button onClick={handleSaveEditedChapter} className="bg-purple-600 hover:bg-purple-700 text-white">Salvar Alterações</Button>
                             </div>
                         </div>
                     </Card>

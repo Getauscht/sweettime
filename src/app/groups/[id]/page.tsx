@@ -41,13 +41,13 @@ export default function GroupPublicView() {
             .finally(() => setLoading(false))
     }, [id])
 
-    if (!id) return <div className="text-white">Invalid group</div>
+    if (!id) return <div className="text-white">Grupo inválido</div>
 
     if (loading) return (
         <div className="min-h-screen bg-[#0f0b14]">
             <Header />
             <main className="container mx-auto px-4 py-8">
-                <div className="text-center text-white">Loading...</div>
+                <div className="text-center text-white">Carregando...</div>
             </main>
         </div>
     )
@@ -56,7 +56,7 @@ export default function GroupPublicView() {
         <div className="min-h-screen bg-[#0f0b14]">
             <Header />
             <main className="container mx-auto px-4 py-8">
-                <div className="text-center text-white">Group not found</div>
+                <div className="text-center text-white">Grupo não encontrado</div>
             </main>
         </div>
     )
@@ -69,12 +69,12 @@ export default function GroupPublicView() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-2">{group.name}</h1>
-                            <p className="text-white/60">Group public profile</p>
+                            <p className="text-white/60">Perfil público do grupo</p>
                         </div>
                         <div>
                             <Link href="/groups">
                                 <Button variant="ghost" size="sm" className="text-white/70 hover:text-white">
-                                    Back to Groups
+                                    Voltar para Grupos
                                 </Button>
                             </Link>
                         </div>
@@ -119,10 +119,10 @@ export default function GroupPublicView() {
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     <Input placeholder="X (https://x.com/...)" value={socialForm.x || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, x: e.target.value }))} />
-                                                    <Input placeholder="Discord (invite link)" value={socialForm.discord || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, discord: e.target.value }))} />
+                                                    <Input placeholder="Discord (link de convite)" value={socialForm.discord || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, discord: e.target.value }))} />
                                                     <Input placeholder="Facebook" value={socialForm.facebook || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, facebook: e.target.value }))} />
                                                     <Input placeholder="Instagram" value={socialForm.instagram || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, instagram: e.target.value }))} />
-                                                    <Input className="col-span-full" placeholder="Website" value={socialForm.website || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, website: e.target.value }))} />
+                                                    <Input className="col-span-full" placeholder="Site" value={socialForm.website || ''} onChange={(e: any) => setSocialForm((s: any) => ({ ...s, website: e.target.value }))} />
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Button size="sm" onClick={async () => {
@@ -152,7 +152,7 @@ export default function GroupPublicView() {
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2 text-white/60">
                                 <Users className="h-5 w-5" />
-                                <span>{group._count?.members || 0} members</span>
+                                <span>{group._count?.members || 0} membros</span>
                             </div>
                             <div className="flex items-center gap-2 text-white/60">
                                 <BookOpen className="h-5 w-5" />
@@ -164,7 +164,7 @@ export default function GroupPublicView() {
                     <Card className="p-6 bg-[#1a1625] border-white/10">
                         <h3 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
                             <Users className="h-5 w-5 text-purple-400" />
-                            Members
+                            Membros
                         </h3>
 
                         <div className="space-y-4">
@@ -186,13 +186,13 @@ export default function GroupPublicView() {
                                         </div>
                                         <Link href={`/profile/${m.user.id}`}>
                                             <Button variant="ghost" size="sm" className="text-white/70 hover:text-white">
-                                                View Profile
+                                                Ver Perfil
                                             </Button>
                                         </Link>
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-8 text-white/60">No members yet</div>
+                                <div className="text-center py-8 text-white/60">Nenhum membro ainda</div>
                             )}
                         </div>
                     </Card>
@@ -205,7 +205,7 @@ export default function GroupPublicView() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {group.webtoons && group.webtoons.length > 0 ? (
                                 group.webtoons.map((w: any) => (
-                                    <Link key={w.id} href={`/webtoon/${w.slug}`}>
+                                    <Link key={w.id} href={`/obra/${w.slug}`}>
                                         <Card className="p-4 bg-[#0f0b14] border-white/5 hover:border-purple-500/30 transition-colors group cursor-pointer">
                                             <div className="aspect-[3/4] bg-white/5 rounded mb-3 flex items-center justify-center">
                                                 {w.cover ? (
@@ -221,7 +221,7 @@ export default function GroupPublicView() {
                                     </Link>
                                 ))
                             ) : (
-                                <div className="col-span-full text-center py-8 text-white/60">No webtoons yet</div>
+                                <div className="col-span-full text-center py-8 text-white/60">Nenhum webtoon ainda</div>
                             )}
                         </div>
                     </Card>
