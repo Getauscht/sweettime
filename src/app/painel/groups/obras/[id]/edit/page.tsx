@@ -310,7 +310,7 @@ export default function EditWorkPage() {
         setEditScanlationGroupId(chapter.scanlationGroup?.id || chapter.scanlationGroupId || null)
         // For novels we may want to load content; fetch full chapter if needed
         if (type === 'novel') {
-            ;(async () => {
+            ; (async () => {
                 try {
                     const res = await fetch(`/api/obra/${id}/chapters/${chapterId}`)
                     if (!res.ok) {
@@ -636,15 +636,15 @@ export default function EditWorkPage() {
                                         const chapterGroupId = chapter.scanlationGroup?.id || chapter.scanlationGroupId
                                         return groups.some(g => g.id === chapterGroupId)
                                     })() && (
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => handleEditChapter(chapter.id)}
-                                            className="text-white hover:bg-white/10 mr-2"
-                                        >
-                                            <Edit2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleEditChapter(chapter.id)}
+                                                className="text-white hover:bg-white/10 mr-2"
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     <Button
                                         variant="ghost"
                                         size="sm"
