@@ -60,6 +60,6 @@ export default withAuth(async function handler(req: NextApiRequest, res: NextApi
         }
     }
 
-        res.setHeader('Allow', ['GET', 'POST'])
-        return res.status(405).end(`Method ${req.method} Not Allowed`)
-    }, authOptions)
+    res.setHeader('Allow', ['GET', 'POST'])
+    return res.status(405).end(`Method ${req.method} Not Allowed`)
+}, authOptions)
