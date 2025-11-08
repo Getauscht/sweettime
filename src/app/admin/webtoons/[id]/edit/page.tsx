@@ -813,7 +813,7 @@ export default function EditWebtoonPage() {
                                             {/* Lazy load editor to avoid SSR issues */}
                                             <React.Suspense fallback={<div className="text-white/60">Loading editor...</div>}>
                                                 {/* Dynamically import component to avoid SSR errors */}
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                { }
                                                 <DynamicMarkdownEditor value={newChapter.markdown} onChange={(v: string) => setNewChapter((prev: any) => ({ ...prev, markdown: v }))} placeholder="Write chapter content in Markdown..." />
                                             </React.Suspense>
                                         </div>

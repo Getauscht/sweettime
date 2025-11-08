@@ -29,7 +29,7 @@ function CreateObraForm() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [authors, setAuthors] = useState<Author[]>([])
     const [workType, setWorkType] = useState<'webtoon' | 'novel'>(
-        (searchParams.get('type') as 'webtoon' | 'novel') || 'webtoon'
+        (searchParams?.get('type') as 'webtoon' | 'novel') || 'webtoon'
     )
 
     const [formData, setFormData] = useState({

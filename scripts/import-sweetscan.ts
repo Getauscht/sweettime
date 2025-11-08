@@ -57,7 +57,7 @@ async function importAll() {
       const author = await upsertAuthor(it.author);
 
       // upsert webtoon
-      let coverLocal = it.coverLocal ? path.relative(process.cwd(), it.coverLocal).replace(/\\/g, '/') : null;
+      const coverLocal = it.coverLocal ? path.relative(process.cwd(), it.coverLocal).replace(/\\/g, '/') : null;
       let coverImageForDb: string | null = null;
       if (coverLocal) {
         // Ensure the file is served from /uploads/cover/<filename>

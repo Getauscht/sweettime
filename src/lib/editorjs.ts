@@ -63,7 +63,7 @@ export function markdownToBlocks(markdown: string) {
     function peek(n = 0) { return lines[i + n] }
 
     while (i < lines.length) {
-        let line = peek().trimEnd()
+        const line = peek().trimEnd()
 
         // skip consecutive blank lines
         if (line.trim() === '') {

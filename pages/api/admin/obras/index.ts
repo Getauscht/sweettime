@@ -57,8 +57,8 @@ export const GET = withPermission(
                     work = {
                         ...webtoon,
                         type: 'webtoon',
-                        authors: webtoon.credits?.filter(c => c.role === 'AUTHOR').map(c => c.author) || [],
-                        artists: webtoon.credits?.filter(c => c.role === 'ARTIST').map(c => c.author) || [],
+                        authors: webtoon.credits?.filter((c: any) => c.role === 'AUTHOR').map((c: any) => c.author) || [],
+                        artists: webtoon.credits?.filter((c: any) => c.role === 'ARTIST').map((c: any) => c.author) || [],
                         genres: webtoon.genres.map(wg => ({ id: wg.genre.id, name: wg.genre.name })),
                         chapters: webtoon.chapters.map(c => ({
                             id: c.id,
@@ -105,8 +105,8 @@ export const GET = withPermission(
                         work = {
                             ...novel,
                             type: 'novel',
-                            authors: novel.credits?.filter(c => c.role === 'AUTHOR').map(c => c.author) || [],
-                            artists: novel.credits?.filter(c => c.role === 'ARTIST').map(c => c.author) || [],
+                            authors: novel.credits?.filter((c: any) => c.role === 'AUTHOR').map((c: any) => c.author) || [],
+                            artists: novel.credits?.filter((c: any) => c.role === 'ARTIST').map((c: any) => c.author) || [],
                             genres: novel.genres.map(ng => ({ id: ng.genre.id, name: ng.genre.name })),
                             chapters: novel.chapters.map(c => ({
                                 id: c.id,
@@ -179,7 +179,7 @@ export const GET = withPermission(
                 webtoons = webtoons.map(w => ({
                     ...w,
                     type: 'webtoon',
-                    authors: w.credits?.filter(c => c.role === 'AUTHOR').map(c => c.author) || []
+                    authors: w.credits?.filter((c: any) => c.role === 'AUTHOR').map((c: any) => c.author) || []
                 }))
             }
 
@@ -212,7 +212,7 @@ export const GET = withPermission(
                 novels = novels.map(n => ({
                     ...n,
                     type: 'novel',
-                    authors: n.credits?.filter(c => c.role === 'AUTHOR').map(c => c.author) || []
+                    authors: n.credits?.filter((c: any) => c.role === 'AUTHOR').map((c: any) => c.author) || []
                 }))
             }
 

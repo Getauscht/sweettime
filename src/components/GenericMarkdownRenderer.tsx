@@ -105,7 +105,7 @@ export function GenericMarkdownRenderer({ content, className = '' }: GenericMark
                     // support HTML details/summary for spoilers
                     details: ({ children, ...props }) => (
                         // props may include 'open'
-                        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+                         
                         <details {...props} className={`mt-2 mb-2 ${props.className || ''}`}>
                             {children}
                         </details>

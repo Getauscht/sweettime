@@ -7,7 +7,32 @@ import { prisma } from '../prisma'
  * Middleware to require authentication
  */
 export async function requireAuth(authOptions?: any) {
-    const session = (await getServerSession(authOptions as any)) as Session | null
+    // Support both Pages API (req,res) and App Router / generic usage.
+    // Signatures supported:
+    //  - requireAuth(req, res, authOptions?)  -> Pages API handler
+    //  - requireAuth({ req, res }, authOptions?) -> routeContext style
+    //  - requireAuth(authOptions?) -> App Router getServerSession(authOptions)
+
+    let session: Session | null = null
+
+    // Pages API style: (req, res, authOptions?)
+    if (arguments.length >= 2 && arguments[0] && arguments[1] && typeof arguments[0].headers === 'object' && typeof arguments[1].status === 'function') {
+        const req = arguments[0]
+        const res = arguments[1]
+        const opts = arguments[2]
+        session = (await getServerSession(req as any, res as any, opts as any)) as Session | null
+    } else if (arguments.length >= 1 && arguments[0] && typeof arguments[0] === 'object' && ('req' in arguments[0] || 'res' in arguments[0])) {
+        // routeContext style: (routeContext, authOptions?)
+        const routeContext = arguments[0]
+        const opts = arguments[1]
+        session = (routeContext?.req && routeContext?.res)
+            ? ((await getServerSession(routeContext.req as any, routeContext.res as any, opts as any)) as Session | null)
+            : ((await getServerSession(opts as any)) as Session | null)
+    } else {
+        // App Router style: (authOptions?)
+        const opts = arguments[0]
+        session = (await getServerSession(opts as any)) as Session | null
+    }
 
     if (!session?.user?.id) {
         return NextResponse.json(

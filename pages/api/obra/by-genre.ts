@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             where: {
                 OR: [
                     { slug: genre.toLowerCase() },
-                    { name: { equals: genre, mode: 'insensitive' } }
+                    { name: { equals: genre } }
                 ]
             }
         })

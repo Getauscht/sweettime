@@ -108,29 +108,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     lastReadAt: new Date(),
                 }
 
-                try {
-                    const history = await prisma.readingHistory.upsert({
-                        where: userId 
-                            ? { userId_workId_chapterId: { userId, workId, chapterId: '' } }
-                            : { sessionId_workId_chapterId: { sessionId: sessionId!, workId, chapterId: '' } },
-                        create: createData,
-                        update: { progress: progress ?? 0, lastReadAt: new Date() }
+                // Upsert by unique compound keys isn't possible for the unified workId/workType
+                // because the schema doesn't define a unique constraint for workId. Use findFirst + update/create.
+                const existing = await prisma.readingHistory.findFirst({ where })
+                let history
+                if (existing) {
+                    history = await prisma.readingHistory.update({
+                        where: { id: existing.id },
+                        data: { progress: progress ?? 0, lastReadAt: new Date() }
                     })
-                    return res.status(200).json({ history, sessionId })
-                } catch (err: any) {
-                    // If upsert fails, try create/update manually
-                    const existing = await prisma.readingHistory.findFirst({ where })
-                    if (existing) {
-                        const history = await prisma.readingHistory.update({
-                            where: { id: existing.id },
-                            data: { progress: progress ?? 0, lastReadAt: new Date() }
-                        })
-                        return res.status(200).json({ history, sessionId })
-                    } else {
-                        const history = await prisma.readingHistory.create({ data: createData })
-                        return res.status(200).json({ history, sessionId })
-                    }
+                } else {
+                    history = await prisma.readingHistory.create({ data: createData })
                 }
+
+                return res.status(200).json({ history, sessionId })
             } else {
                 // Legacy format: separate webtoonId/novelId + chapterId
                 let where: any = {}

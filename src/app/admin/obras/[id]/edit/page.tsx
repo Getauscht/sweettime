@@ -16,7 +16,7 @@ function EditObraForm() {
     const searchParams = useSearchParams()
     const { toast, ToastContainer } = useToast()
     const id = params?.id as string | undefined
-    const typeParam = searchParams.get('type') as 'webtoon' | 'novel' | null
+    const typeParam = searchParams?.get('type') as 'webtoon' | 'novel' | null
 
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
