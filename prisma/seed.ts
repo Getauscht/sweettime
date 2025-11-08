@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '../src/lib/prisma'
 import { hash } from 'bcryptjs'
 import { initializeRBAC } from '../src/lib/auth/permissions'

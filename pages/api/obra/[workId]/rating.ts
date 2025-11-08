@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -10,12 +11,10 @@ import { prisma } from '@/lib/prisma'
  * 
  * Detects work type automatically and delegates to appropriate table
  */
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const userId = (req as any).auth?.userId
 
-    if (!session?.user?.id) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
     const { workId } = req.query
     if (!workId || typeof workId !== 'string') {
@@ -55,10 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'GET') {
             const userRating = isWebtoon
                 ? await prisma.webtoonRating.findUnique({
-                    where: { userId_webtoonId: { userId: session.user.id, webtoonId: workDbId! } }
+                    where: { userId_webtoonId: { userId, webtoonId: workDbId! } }
                 })
                 : await prisma.novelRating.findUnique({
-                    where: { userId_novelId: { userId: session.user.id, novelId: workDbId! } }
+                    where: { userId_novelId: { userId, novelId: workDbId! } }
                 })
 
             return res.status(200).json({
@@ -78,9 +77,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Upsert user rating
             if (isWebtoon) {
                 await prisma.webtoonRating.upsert({
-                    where: { userId_webtoonId: { userId: session.user.id, webtoonId: workDbId! } },
+                    where: { userId_webtoonId: { userId, webtoonId: workDbId! } },
                     create: {
-                        userId: session.user.id,
+                        userId,
                         webtoonId: workDbId!,
                         rating
                     },
@@ -88,9 +87,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 })
             } else {
                 await prisma.novelRating.upsert({
-                    where: { userId_novelId: { userId: session.user.id, novelId: workDbId! } },
+                    where: { userId_novelId: { userId, novelId: workDbId! } },
                     create: {
-                        userId: session.user.id,
+                        userId,
                         novelId: workDbId!,
                         rating
                     },
@@ -131,11 +130,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Delete user rating
             if (isWebtoon) {
                 await prisma.webtoonRating.deleteMany({
-                    where: { userId: session.user.id, webtoonId: workDbId! }
+                    where: { userId, webtoonId: workDbId! }
                 })
             } else {
                 await prisma.novelRating.deleteMany({
-                    where: { userId: session.user.id, novelId: workDbId! }
+                    where: { userId, novelId: workDbId! }
                 })
             }
 
@@ -174,3 +173,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Internal server error' })
     }
 }
+
+export default withAuth(handler, authOptions)

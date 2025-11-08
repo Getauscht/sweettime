@@ -5,8 +5,6 @@ import { prisma } from '@/lib/prisma'
 import { isAdminSession } from '@/lib/auth/middleware'
 import { z } from 'zod'
 
-const DEFAULT_ROLES = ['Admin', 'Moderator', 'Author', 'Reader']
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions)
 

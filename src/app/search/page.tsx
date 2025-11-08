@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -82,7 +84,7 @@ export default function SearchPage() {
                 if (!res.ok) return
                 const data = await res.json()
                 setPopular(data.webtoons || [])
-            } catch (err) {
+            } catch {
                 // ignore
             }
         }
@@ -209,7 +211,7 @@ export default function SearchPage() {
                         ) : (
                             <div className="text-center py-16">
                                 <div className="text-6xl mb-4">🔍</div>
-                                <p className="text-white/60 mb-2">Nenhum resultado encontrado para "{query}"</p>
+                                <p className="text-white/60 mb-2">Nenhum resultado encontrado para &rdquo;{query}&rdquo;</p>
                                 <p className="text-sm text-white/40">Tente palavras-chave diferentes ou verifique a ortografia</p>
                             </div>
                         )}

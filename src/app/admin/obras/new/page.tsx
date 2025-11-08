@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -6,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
-import { Upload, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 import { AuthorSelector } from '@/components/AuthorSelector'
 
@@ -167,7 +169,6 @@ function CreateObraForm() {
             })
 
             if (response.ok) {
-                const data = await response.json()
                 toast(`${workType === 'webtoon' ? 'Webtoon' : 'Novel'} criado com sucesso!`, 'success')
                 setTimeout(() => {
                     router.push('/admin/obras')

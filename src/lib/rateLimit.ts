@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible'
 import { redis } from './redis'
 

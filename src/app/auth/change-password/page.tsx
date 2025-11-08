@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function ChangePasswordPage() {
     const router = useRouter()
-    const { data: session, update } = useSession()
+    const { update } = useSession()
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -65,8 +65,7 @@ export default function ChangePasswordPage() {
                 // update session to clear mustChangePassword flag
                 try {
                     await update()
-                } catch (e) {
-                    // ignore
+                } catch {
                 }
 
                 setTimeout(() => router.push('/'), 2000)

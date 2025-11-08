@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react'
@@ -274,8 +277,8 @@ function EditObraForm() {
                 <button
                     onClick={() => setActiveTab('info')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'info'
-                            ? 'text-purple-400 border-b-2 border-purple-400'
-                            : 'text-white/60 hover:text-white'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-white/60 hover:text-white'
                         }`}
                 >
                     <FileText className="inline h-4 w-4 mr-2" />
@@ -284,8 +287,8 @@ function EditObraForm() {
                 <button
                     onClick={() => setActiveTab('chapters')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'chapters'
-                            ? 'text-purple-400 border-b-2 border-purple-400'
-                            : 'text-white/60 hover:text-white'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-white/60 hover:text-white'
                         }`}
                 >
                     <BookOpen className="inline h-4 w-4 mr-2" />

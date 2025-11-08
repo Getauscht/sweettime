@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const userId = (req as any).auth?.userId
 
-    if (!session?.user?.id) {
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
 
@@ -16,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { unreadOnly } = req.query
 
             const where: any = {
-                userId: session.user.id,
+                userId,
                 ...(unreadOnly === 'true' && { isRead: false })
             }
 
@@ -28,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const unreadCount = await prisma.notification.count({
                 where: {
-                    userId: session.user.id,
+                    userId,
                     isRead: false
                 }
             })
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             if (markAllAsRead) {
                 await prisma.notification.updateMany({
                     where: {
-                        userId: session.user.id,
+                        userId,
                         isRead: false
                     },
                     data: { isRead: true }
@@ -73,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await prisma.notification.updateMany({
                     where: {
                         id: notificationId,
-                        userId: session.user.id
+                        userId,
                     },
                     data: { isRead: true }
                 })
@@ -103,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { notificationId, clearAll } = parsed.data
 
             if (clearAll) {
-                await prisma.notification.deleteMany({ where: { userId: session.user.id } })
+                await prisma.notification.deleteMany({ where: { userId } })
                 return res.status(200).json({ success: true })
             }
 
@@ -115,7 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await prisma.notification.deleteMany({
                 where: {
                     id: notificationId,
-                    userId: session.user.id
+                    userId,
                 }
             })
 
@@ -128,3 +129,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

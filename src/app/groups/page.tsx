@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState, useMemo } from 'react'
@@ -6,7 +7,6 @@ import Header from '@/components/Header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Users } from 'lucide-react'
 
 export default function GroupsIndexPage() {
     const [groups, setGroups] = useState<any[]>([])

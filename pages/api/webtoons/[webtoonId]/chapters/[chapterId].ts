@@ -1,20 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]';
+import { authOptions } from '../../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const { webtoonId, chapterId } = req.query
 
     if (typeof webtoonId !== 'string' || typeof chapterId !== 'string') {
         return res.status(400).json({ error: 'Invalid parameters' })
-    }
-
-    if (!session?.user) {
-        return res.status(401).json({ error: 'Unauthorized' })
     }
 
     if (req.method == 'GET') {
@@ -118,40 +114,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to fetch chapter' })
         }
     } else if (req.method === 'DELETE') {
-        try {
-            // Get chapter
-            const chapter = await prisma.chapter.findUnique({
-                where: { id: chapterId },
-                include: { scanlationGroup: true },
-            })
-
-            if (!chapter) {
-                return res.status(404).json({ error: 'Chapter not found' })
-            }
-
-            // Verify webtoon matches
-            if (chapter.webtoonId !== webtoonId) {
-                return res.status(400).json({ error: 'Chapter does not belong to this webtoon' })
-            }
-
-            // Check if user is an admin. Deletion of chapters is restricted to admins.
-            const userId = (session.user as any)?.id
-            const dbUser = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } })
-            const userIsAdmin = dbUser?.role?.name === 'admin'
-            if (!userIsAdmin) {
-                return res.status(403).json({
-                    error: 'Only admins can delete chapters',
+        // Delegate DELETE to an auth-protected handler
+        return withAuth(async (req2: NextApiRequest, res2: NextApiResponse) => {
+            try {
+                // Get chapter
+                const chapter = await prisma.chapter.findUnique({
+                    where: { id: chapterId },
+                    include: { scanlationGroup: true },
                 })
+
+                if (!chapter) {
+                    return res2.status(404).json({ error: 'Chapter not found' })
+                }
+
+                // Verify webtoon matches
+                if (chapter.webtoonId !== webtoonId) {
+                    return res2.status(400).json({ error: 'Chapter does not belong to this webtoon' })
+                }
+
+                // Check if user is an admin. Deletion of chapters is restricted to admins.
+                const userId = (req2 as any).auth?.userId
+                const dbUser = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } })
+                const userIsAdmin = dbUser?.role?.name === 'admin'
+                if (!userIsAdmin) {
+                    return res2.status(403).json({
+                        error: 'Only admins can delete chapters',
+                    })
+                }
+
+                // Delete chapter
+                await prisma.chapter.delete({ where: { id: chapterId } })
+
+                return res2.status(200).json({ message: 'Chapter deleted' })
+            } catch (error: any) {
+                console.error('Error deleting chapter:', error)
+                return res2.status(500).json({ error: 'Failed to delete chapter' })
             }
-
-            // Delete chapter
-            await prisma.chapter.delete({ where: { id: chapterId } })
-
-            return res.status(200).json({ message: 'Chapter deleted' })
-        } catch (error: any) {
-            console.error('Error deleting chapter:', error)
-            return res.status(500).json({ error: 'Failed to delete chapter' })
-        }
+        }, authOptions)(req, res)
     } else {
         res.setHeader('Allow', ['GET', 'DELETE'])
         return res.status(405).end()

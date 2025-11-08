@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
@@ -137,7 +138,6 @@ export const PATCH = withPermission(
     async (req: Request, { userId }: { userId: string }) => {
         try {
             const body = await req.json()
-            const schema = z.object({ chapterId: z.string().min(1), updates: z.record(z.string(), z.any()).optional() })
             const { chapterId, ...updates } = body
 
             if (!chapterId) return NextResponse.json({ error: 'Chapter ID required' }, { status: 400 })

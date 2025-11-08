@@ -1,8 +1,11 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -84,7 +87,7 @@ export default function ProfilePage() {
                 }
                 const t = (hashTab || searchTab) as 'favorites' | 'history' | 'lists' | 'notifications' | null
                 if (t && ['favorites', 'history', 'lists', 'notifications'].includes(t)) {
-                    setActiveTab(t as any)
+                    setActiveTab(t)
                 }
             } catch { }
         }
@@ -320,8 +323,8 @@ export default function ProfilePage() {
                                                         <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden relative">
                                                             <img src={work.coverImage} alt={work.title} className="w-full h-full object-cover" />
                                                             <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${workType === 'webtoon' 
-                                                                    ? 'bg-purple-500/80 text-white' 
-                                                                    : 'bg-blue-500/80 text-white'
+                                                                ? 'bg-purple-500/80 text-white' 
+                                                                : 'bg-blue-500/80 text-white'
                                                                 }`}>
                                                                 {workType === 'webtoon' ? 'W' : 'N'}
                                                             </div>
@@ -355,8 +358,8 @@ export default function ProfilePage() {
                                                         <div className="w-full h-40 bg-white/5 rounded-lg overflow-hidden relative">
                                                             <img src={work.coverImage} alt={work.title} className="w-full h-full object-cover" />
                                                             <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${workType === 'webtoon' 
-                                                                    ? 'bg-purple-500/80 text-white' 
-                                                                    : 'bg-blue-500/80 text-white'
+                                                                ? 'bg-purple-500/80 text-white' 
+                                                                : 'bg-blue-500/80 text-white'
                                                                 }`}>
                                                                 {workType === 'webtoon' ? 'W' : 'N'}
                                                             </div>

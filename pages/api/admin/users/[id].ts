@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
 import { prisma } from '@/lib/prisma'
-import { PERMISSIONS } from '@/lib/auth/permissions'
 import { isAdminSession } from '@/lib/auth/middleware'
 import { z } from 'zod'
 

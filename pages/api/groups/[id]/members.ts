@@ -1,17 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { isUserMemberOfGroup } from '@/lib/auth/groups'
 import { hasPermission, PERMISSIONS } from '@/lib/auth/permissions'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+export default withAuth(async function handler(req: NextApiRequest, res: NextApiResponse) {
     const groupId = (req.query.id as string) || (req.query['id[]'] as any)
     if (!groupId || typeof groupId !== 'string') return res.status(400).json({ error: 'Invalid group id' })
 
-    if (!session?.user) return res.status(401).json({ error: 'Unauthorized' })
-    const userId = (session.user as any).id
+    const userId = (req as any).auth?.userId
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
     // only leader or admin can manage members
     const isMember = await isUserMemberOfGroup(userId, groupId)
@@ -62,4 +62,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
     return res.status(405).end(`Method ${req.method} Not Allowed`)
-}
+}, authOptions)

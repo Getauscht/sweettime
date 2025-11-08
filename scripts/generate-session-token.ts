@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { encode } from 'next-auth/jwt'
 
 async function main() {

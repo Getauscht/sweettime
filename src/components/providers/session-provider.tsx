@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { SessionProvider as NextAuthSessionProvider, useSession } from 'next-auth/react'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -10,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useToast } from '@/components/Toast'
-import { ArrowLeft, Search, Users, Crown, Shield, Upload, UserPlus, UserMinus } from 'lucide-react'
+import { Search, Users, Crown, Shield, Upload, UserPlus, UserMinus } from 'lucide-react'
 import Link from 'next/link'
 
 export default function GroupMembersPage() {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
@@ -7,7 +8,7 @@ import { authOptions } from '../../auth/[...nextauth]'
 
 export const GET = withPermission(
     PERMISSIONS.ANALYTICS_VIEW,
-    async (req: Request) => {
+    async () => {
         try {
             // Get statistics
             const [

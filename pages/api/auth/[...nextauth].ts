@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import NextAuth, { NextAuthOptions } from "next-auth"
 import type { Adapter } from "next-auth/adapters"
 import CredentialsProvider from "next-auth/providers/credentials"
@@ -58,7 +59,7 @@ export const authOptions: NextAuthOptions = {
                     if (user.totpSecretEncrypted) {
                         try {
                             secretPlain = decryptSecret(user.totpSecretEncrypted)
-                        } catch (e) {
+                        } catch {
                             // ignore decrypt errors
                         }
                     }
@@ -114,7 +115,7 @@ export const authOptions: NextAuthOptions = {
                         try {
                             const u = new URL(url)
                             return u.searchParams.get('token') || url
-                        } catch (e) {
+                        } catch {
                             return url
                         }
                     })()
@@ -135,7 +136,7 @@ export const authOptions: NextAuthOptions = {
         error: "/auth/error",
     },
     callbacks: {
-        async jwt({ token, user, account }) {
+        async jwt({ token, user }) {
             if (user) {
                 token.id = user.id
                 token.emailVerified = user.emailVerified

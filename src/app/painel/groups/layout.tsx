@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Users, Plus, Settings, BookOpen, Home, Menu, X, ArrowLeft, User } from 'lucide-react'
+import { Users, Plus, BookOpen, Home, Menu, X, ArrowLeft, User } from 'lucide-react'
 
 export default function GroupsLayout({
     children,

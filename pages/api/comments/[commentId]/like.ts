@@ -1,21 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
-import { sendPushToUser } from '@/lib/push'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
-
-    if (!session?.user?.id) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
-
+async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { commentId } = req.query
 
     if (typeof commentId !== 'string') {
         return res.status(400).json({ error: 'Invalid comment ID' })
     }
+
+    const userId = (req as any).auth?.userId
 
     // POST - Like/Unlike comment
     if (req.method === 'POST') {
@@ -37,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const existingLike = await prisma.commentLike.findUnique({
                 where: {
                     userId_commentId: {
-                        userId: session.user.id,
+                        userId,
                         commentId
                     }
                 }
@@ -48,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 await prisma.commentLike.delete({
                     where: {
                         userId_commentId: {
-                            userId: session.user.id,
+                            userId,
                             commentId
                         }
                     }
@@ -66,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // Like: create the like
                 await prisma.commentLike.create({
                     data: {
-                        userId: session.user.id,
+                        userId,
                         commentId
                     }
                 })
@@ -76,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 })
 
                 // Create notification for comment author (if not self-like)
-                if (comment.userId !== session.user.id) {
+                if (comment.userId !== userId) {
                     let link: string | undefined
                     if (comment.chapter && comment.chapter.webtoon) {
                         link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
@@ -87,7 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         userId: comment.userId,
                         type: 'like',
                         title: 'Novo like no seu comentário',
-                        message: `${session.user.name} curtiu seu comentário`,
+                        message: `${(req as any).auth?.session?.user?.name || 'Um usuário'} curtiu seu comentário`,
                         link,
                     })
                 }
@@ -110,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 prisma.commentLike.findUnique({
                     where: {
                         userId_commentId: {
-                            userId: session.user.id,
+                            userId,
                             commentId
                         }
                     }
@@ -132,3 +128,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

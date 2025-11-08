@@ -13,6 +13,7 @@ export function verifyTOTP(token: string, secret: string): boolean {
     try {
         return authenticator.verify({ token, secret })
     } catch (error) {
+        console.error('Error verifying TOTP:', error)
         return false
     }
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { PrismaClient } from '@prisma/client';
@@ -28,26 +29,6 @@ async function fetchHTML(url: string) {
     return res.data as string;
 }
 
-async function asyncMapLimit<T, R>(items: T[], limit: number, fn: (t: T, idx: number) => Promise<R>) {
-    const results: R[] = [];
-    let i = 0;
-    const workers: Promise<void>[] = [];
-    async function worker() {
-        while (i < items.length) {
-            const idx = i++;
-            try {
-                const r = await fn(items[idx], idx);
-                results[idx] = r;
-            } catch (err) {
-                console.error('Item failed', idx, err);
-                results[idx] = null as unknown as R;
-            }
-        }
-    }
-    for (let w = 0; w < Math.min(limit, items.length); w++) workers.push(worker());
-    await Promise.all(workers);
-    return results;
-}
 
 type WorkEntry = { url: string; title: string };
 
@@ -124,7 +105,7 @@ async function importChaptersForWork(work: WorkEntry, opts: { dryRun?: boolean; 
         try {
             const u = new URL(href, work.url).toString();
             chapters.push({ url: u, number: parsed.number, title: parsed.title });
-        } catch (err) {
+        } catch {
             // ignore
         }
     });
@@ -166,7 +147,7 @@ async function importChaptersForWork(work: WorkEntry, opts: { dryRun?: boolean; 
                     if (!src) return;
                     try {
                         images.push(new URL(src, ch.url).toString());
-                    } catch (err) { }
+                    } catch { }
                 });
 
                 // fallback: any img inside .reading-content
@@ -174,7 +155,7 @@ async function importChaptersForWork(work: WorkEntry, opts: { dryRun?: boolean; 
                     $$('.reading-content img').each((_, im) => {
                         const src = $$(im).attr('src') || $$(im).attr('data-src');
                         if (!src) return;
-                        try { images.push(new URL(src, ch.url).toString()); } catch (err) { }
+                        try { images.push(new URL(src, ch.url).toString()); } catch { }
                     });
                 }
 
@@ -221,6 +202,7 @@ function parseArgList(arg?: string) {
 }
 
 async function main() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const argv = require('minimist')(process.argv.slice(2));
     const workArg: string | undefined = argv.works || argv.w;
     const dry: boolean = !!argv.dry || !!argv['dry-run'];

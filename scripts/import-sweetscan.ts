@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from '@prisma/client';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -116,7 +117,7 @@ async function importAll() {
       if (author) {
         try {
           await prisma.webtoonCredit.create({ data: { webtoonId: webtoon.id, authorId: author.id, role: 'AUTHOR' } });
-        } catch (e) {
+        } catch {
           // ignore duplicates
         }
       }
@@ -130,7 +131,7 @@ async function importAll() {
         if (!genre) continue;
         try {
           await prisma.webtoonGenre.create({ data: { webtoonId: webtoon.id, genreId: genre.id } });
-        } catch (e) {
+        } catch {
           // ignore duplicates
         }
       }

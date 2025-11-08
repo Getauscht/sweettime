@@ -1,16 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
-
-    if (!session?.user?.id) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
-
+async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { commentId } = req.query
 
     if (typeof commentId !== 'string') {
@@ -42,11 +37,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(404).json({ error: 'Comment not found' })
             }
 
+            const userId = (req as any).auth?.userId
+
             // Check if user already reported this comment
             const existingReport = await prisma.commentReport.findUnique({
                 where: {
                     userId_commentId: {
-                        userId: session.user.id,
+                        userId,
                         commentId
                     }
                 }
@@ -59,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Create report
             const report = await prisma.commentReport.create({
                 data: {
-                    userId: session.user.id,
+                    userId,
                     commentId,
                     reason,
                     details: details || null,
@@ -87,22 +84,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // GET - Check if user has reported this comment
     if (req.method === 'GET') {
         try {
-            const report = await prisma.commentReport.findUnique({
+            const sessionReport = await prisma.commentReport.findUnique({
                 where: {
                     userId_commentId: {
-                        userId: session.user.id,
+                        userId: (req as any).auth?.userId,
                         commentId
                     }
                 }
             })
 
+            // If no session (not authenticated) this will return false/null
             return res.status(200).json({
-                reported: !!report,
-                report: report ? {
-                    id: report.id,
-                    reason: report.reason,
-                    status: report.status,
-                    createdAt: report.createdAt
+                reported: !!sessionReport,
+                report: sessionReport ? {
+                    id: sessionReport.id,
+                    reason: sessionReport.reason,
+                    status: sessionReport.status,
+                    createdAt: sessionReport.createdAt
                 } : null
             })
         } catch (error) {
@@ -113,3 +111,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

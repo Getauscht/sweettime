@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '@/lib/prisma'
 import { v4 as uuidv4 } from 'uuid'
 import { Prisma } from '@prisma/client'
@@ -8,7 +9,7 @@ export async function runConcurrencyTest() {
     // Setup: create webtoon, group, chapter
     const webtoon = await prisma.webtoon.create({ data: { title: `test-webtoon-${Date.now()}`, slug: `test-webtoon-${Date.now()}-${Math.random().toString(36).substring(2, 8)}` } })
     const group = await prisma.scanlationGroup.create({ data: { name: `test-group-${Date.now()}`, slug: `test-group-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`, description: 'temp group for tests' } })
-    const chapter = await prisma.chapter.create({ data: { webtoonId: webtoon.id, number: 1, content: [] as any, scanlationGroupId: group.id } })
+    const chapter = await prisma.chapter.create({ data: { webtoonId: webtoon.id, number: 1, content: [], scanlationGroupId: group.id } })
 
     const sessionId = uuidv4()
     const userId = null
@@ -16,7 +17,7 @@ export async function runConcurrencyTest() {
     // Helper emulates the server handler: try create then handle P2002 by finding existing and updating
     async function createOrUpdate(progress: number) {
         const where = userId ? { userId, webtoonId: webtoon.id, chapterId: chapter.id } : { sessionId, webtoonId: webtoon.id, chapterId: chapter.id }
-        const createData: any = {
+        const createData = {
             userId,
             sessionId: userId ? null : sessionId,
             webtoonId: webtoon.id,
@@ -27,7 +28,7 @@ export async function runConcurrencyTest() {
 
         try {
             return await prisma.readingHistory.create({ data: createData })
-        } catch (err: any) {
+        } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
                 const existing = await prisma.readingHistory.findFirst({ where })
                 if (existing) {

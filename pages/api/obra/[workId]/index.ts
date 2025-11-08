@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -11,15 +12,10 @@ const updateSchema = z.object({
 })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
     const { workId } = req.query
 
     if (typeof workId !== 'string') {
         return res.status(400).json({ error: 'Invalid work identifier' })
-    }
-
-    if (!session?.user) {
-        return res.status(401).json({ error: 'Unauthorized' })
     }
 
     if (req.method === 'GET') {
@@ -202,63 +198,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to fetch work', details: error.message })
         }
     } else if (req.method === 'PATCH') {
-        try {
-            const parsed = updateSchema.parse(req.body)
+        return withAuth(async (req2: NextApiRequest, res2: NextApiResponse) => {
+            try {
+                const parsed = updateSchema.parse(req2.body)
 
-            // Determine type by checking both tables
-            const webtoon = await prisma.webtoon.findUnique({ where: { id: workId } })
-            const novel = await prisma.novel.findUnique({ where: { id: workId } })
+                // Determine type by checking both tables
+                const webtoon = await prisma.webtoon.findUnique({ where: { id: workId } })
+                const novel = await prisma.novel.findUnique({ where: { id: workId } })
 
-            if (!webtoon && !novel) {
-                return res.status(404).json({ error: 'Work not found' })
+                if (!webtoon && !novel) {
+                    return res2.status(404).json({ error: 'Work not found' })
+                }
+
+                const type = webtoon ? 'webtoon' : 'novel'
+
+                const updateData: any = {}
+                if (parsed.status !== undefined) updateData.status = parsed.status
+                if (parsed.description !== undefined) updateData.description = parsed.description
+                if (parsed.title !== undefined) updateData.title = parsed.title
+
+                const updated = type === 'webtoon'
+                    ? await prisma.webtoon.update({ where: { id: workId }, data: updateData })
+                    : await prisma.novel.update({ where: { id: workId }, data: updateData })
+
+                return res2.status(200).json({ work: { ...updated, type } })
+            } catch (error: any) {
+                console.error('Error updating work:', error)
+                if (error instanceof z.ZodError) {
+                    return res2.status(400).json({ error: 'Invalid input' })
+                }
+                return res2.status(500).json({ error: 'Failed to update work' })
             }
-
-            const type = webtoon ? 'webtoon' : 'novel'
-
-            const updateData: any = {}
-            if (parsed.status !== undefined) updateData.status = parsed.status
-            if (parsed.description !== undefined) updateData.description = parsed.description
-            if (parsed.title !== undefined) updateData.title = parsed.title
-
-            const updated = type === 'webtoon'
-                ? await prisma.webtoon.update({
-                    where: { id: workId },
-                    data: updateData,
-                })
-                : await prisma.novel.update({
-                    where: { id: workId },
-                    data: updateData,
-                })
-
-            return res.status(200).json({ work: { ...updated, type } })
-        } catch (error: any) {
-            console.error('Error updating work:', error)
-            if (error instanceof z.ZodError) {
-                return res.status(400).json({ error: 'Invalid input' })
-            }
-            return res.status(500).json({ error: 'Failed to update work' })
-        }
+        }, authOptions)(req, res)
     } else if (req.method === 'DELETE') {
-        try {
-            // Determine type
-            const webtoon = await prisma.webtoon.findUnique({ where: { id: workId } })
-            const novel = await prisma.novel.findUnique({ where: { id: workId } })
+        return withAuth(async (req2: NextApiRequest, res2: NextApiResponse) => {
+            try {
+                // Determine type
+                const webtoon = await prisma.webtoon.findUnique({ where: { id: workId } })
+                const novel = await prisma.novel.findUnique({ where: { id: workId } })
 
-            if (!webtoon && !novel) {
-                return res.status(404).json({ error: 'Work not found' })
+                if (!webtoon && !novel) {
+                    return res2.status(404).json({ error: 'Work not found' })
+                }
+
+                if (webtoon) {
+                    await prisma.webtoon.delete({ where: { id: workId } })
+                } else {
+                    await prisma.novel.delete({ where: { id: workId } })
+                }
+
+                return res2.status(200).json({ message: 'Work deleted' })
+            } catch (error: any) {
+                console.error('Error deleting work:', error)
+                return res2.status(500).json({ error: 'Failed to delete work' })
             }
-
-            if (webtoon) {
-                await prisma.webtoon.delete({ where: { id: workId } })
-            } else {
-                await prisma.novel.delete({ where: { id: workId } })
-            }
-
-            return res.status(200).json({ message: 'Work deleted' })
-        } catch (error: any) {
-            console.error('Error deleting work:', error)
-            return res.status(500).json({ error: 'Failed to delete work' })
-        }
+        }, authOptions)(req, res)
     } else {
         res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
         return res.status(405).end()

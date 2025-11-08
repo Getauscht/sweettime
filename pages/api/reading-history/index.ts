@@ -1,17 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]'
+// Session is optional for reading history (anonymous sessions supported). We'll lazily load session when needed.
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+    // Lazily obtain session if available (do not require authentication)
+    let session: any = null
+    try {
+        const { getServerSession } = await import('next-auth')
+        const { authOptions } = await import('../auth/[...nextauth]')
+        session = await getServerSession(req as any, res as any, authOptions as any) as any
+    } catch {
+        session = null
+    }
 
     if (req.method === 'GET') {
         // Get reading history
-        const { userId, sessionId } = req.query
+        const { sessionId } = req.query
 
         try {
             const where: any = {}
@@ -84,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'Missing or invalid required fields', details: parsed.error.format() })
         }
 
-        const { workId, workType, chapterNumber, webtoonId, chapterId, novelId, novelChapterId, progress, sessionId: bodySessionId } = parsed.data
+        const { workId, workType, webtoonId, chapterId, novelId, novelChapterId, progress, sessionId: bodySessionId } = parsed.data
 
         try {
             const userId = session?.user?.id || null

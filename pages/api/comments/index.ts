@@ -1,15 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
-import { sendPushToUser } from '@/lib/push'
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
-
-    // GET - List comments
+    // GET - List comments (public). We lazily load session only to compute user-specific liked state.
     if (req.method === 'GET') {
         const { webtoonId, chapterId, novelId, novelChapterId, sort } = req.query
 
@@ -99,7 +97,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             })
 
             // Transform comments to include like information
-            const userId = session?.user?.id
+            // Lazily obtain session to check liked status for the current user (if any)
+            let userId: string | undefined | null = null
+            try {
+                const { getServerSession } = await import('next-auth')
+                const { authOptions } = await import('../auth/[...nextauth]')
+                const session = await getServerSession(req as any, res as any, authOptions as any) as any
+                userId = session?.user?.id
+            } catch {
+                userId = null
+            }
             const transformedComments = await Promise.all(comments.map(async (comment) => {
                 const liked = userId ? await prisma.commentLike.findUnique({
                     where: {
@@ -146,104 +153,110 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to fetch comments' })
         }
     }
-
-    // POST - Create comment
+    // POST - Create comment (requires auth)
     if (req.method === 'POST') {
-        if (!session?.user?.id) {
-            return res.status(401).json({ error: 'Unauthorized' })
-        }
-        const bodySchema = z.object({
-            webtoonId: z.string().optional(),
-            chapterId: z.string().optional(),
-            novelId: z.string().optional(),
-            novelChapterId: z.string().optional(),
-            content: z.string().min(1, 'Content is required'),
-            mentions: z.array(z.string()).optional(),
-        })
+        // Delegate to protected handler which will attach req.auth
+        const postHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+            const bodySchema = z.object({
+                webtoonId: z.string().optional(),
+                chapterId: z.string().optional(),
+                novelId: z.string().optional(),
+                novelChapterId: z.string().optional(),
+                content: z.string().min(1, 'Content is required'),
+                mentions: z.array(z.string()).optional(),
+            })
 
-        const parsed = bodySchema.safeParse(req.body)
+            const parsed = bodySchema.safeParse(req.body)
 
-        if (!parsed.success) {
-            return res.status(400).json({ error: 'Invalid payload', details: parsed.error.format() })
-        }
+            if (!parsed.success) {
+                return res.status(400).json({ error: 'Invalid payload', details: parsed.error.format() })
+            }
 
-        const { webtoonId, chapterId, novelId, novelChapterId, content, mentions } = parsed.data
+            const { webtoonId, chapterId, novelId, novelChapterId, content, mentions } = parsed.data
 
-        if (!webtoonId && !chapterId && !novelId && !novelChapterId) {
-            return res.status(400).json({ error: 'Either webtoonId/chapterId or novelId/novelChapterId must be provided' })
-        }
+            if (!webtoonId && !chapterId && !novelId && !novelChapterId) {
+                return res.status(400).json({ error: 'Either webtoonId/chapterId or novelId/novelChapterId must be provided' })
+            }
 
-        try {
-            const comment = await prisma.comment.create({
-                data: {
-                    userId: session.user.id,
-                    webtoonId: webtoonId || null,
-                    chapterId: chapterId || null,
-                    novelId: novelId || null,
-                    novelChapterId: novelChapterId || null,
-                    content,
-                    mentions: mentions?.length
-                        ? {
-                            create: mentions.map((userId: string) => ({
-                                userId,
-                            })),
-                        }
-                        : undefined,
-                },
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            image: true,
-                        },
+            try {
+                const userId = (req as any).auth?.userId
+
+                const comment = await prisma.comment.create({
+                    data: {
+                        userId,
+                        webtoonId: webtoonId || null,
+                        chapterId: chapterId || null,
+                        novelId: novelId || null,
+                        novelChapterId: novelChapterId || null,
+                        content,
+                        mentions: mentions?.length
+                            ? {
+                                create: mentions.map((userId: string) => ({
+                                    userId,
+                                })),
+                            }
+                            : undefined,
                     },
-                    webtoon: { select: { slug: true } },
-                    chapter: { select: { number: true, webtoon: { select: { slug: true } } } },
-                    novel: { select: { slug: true } },
-                    novelChapter: { select: { number: true, novel: { select: { slug: true } } } },
-                    mentions: {
-                        include: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    name: true,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true,
+                            },
+                        },
+                        webtoon: { select: { slug: true } },
+                        chapter: { select: { number: true, webtoon: { select: { slug: true } } } },
+                        novel: { select: { slug: true } },
+                        novelChapter: { select: { number: true, novel: { select: { slug: true } } } },
+                        mentions: {
+                            include: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            })
+                })
 
-            // Create notifications for mentioned users
-            if (mentions?.length) {
-                // Build deep link to comment
-                let link: string | undefined
-                if (comment.chapter && comment.chapter.webtoon) {
-                    link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
-                } else if (comment.webtoon) {
-                    link = `/webtoon/${comment.webtoon.slug}?comment=${comment.id}`
-                } else if (comment.novelChapter && comment.novelChapter.novel) {
-                    link = `/novel/${comment.novelChapter.novel.slug}/chapter/${comment.novelChapter.number}?comment=${comment.id}`
-                } else if (comment.novel) {
-                    link = `/novel/${comment.novel.slug}?comment=${comment.id}`
+                // Create notifications for mentioned users
+                if (mentions?.length) {
+                    // Build deep link to comment
+                    let link: string | undefined
+                    if (comment.chapter && comment.chapter.webtoon) {
+                        link = `/webtoon/${comment.chapter.webtoon.slug}/chapter/${comment.chapter.number}?comment=${comment.id}`
+                    } else if (comment.webtoon) {
+                        link = `/webtoon/${comment.webtoon.slug}?comment=${comment.id}`
+                    } else if (comment.novelChapter && comment.novelChapter.novel) {
+                        link = `/novel/${comment.novelChapter.novel.slug}/chapter/${comment.novelChapter.number}?comment=${comment.id}`
+                    } else if (comment.novel) {
+                        link = `/novel/${comment.novel.slug}?comment=${comment.id}`
+                    }
+
+                    const actorName = (req as any).auth?.session?.user?.name || 'Alguém'
+
+                    const items = mentions.map((userId: string) => ({
+                        userId,
+                        type: 'mention',
+                        title: 'Você foi mencionado',
+                        message: `${actorName} mencionou você em um comentário`,
+                        link,
+                    }))
+                    // create notifications and send web push
+                    await (await import('@/lib/notifications')).createNotificationsAndPushMany(items)
                 }
-                const items = mentions.map((userId: string) => ({
-                    userId,
-                    type: 'mention',
-                    title: 'Você foi mencionado',
-                    message: `${session.user.name} mencionou você em um comentário`,
-                    link,
-                }))
-                // create notifications and send web push
-                await (await import('@/lib/notifications')).createNotificationsAndPushMany(items)
-            }
 
-            return res.status(201).json({ comment })
-        } catch (error) {
-            console.error('Error creating comment:', error)
-            return res.status(500).json({ error: 'Failed to create comment' })
+                return res.status(201).json({ comment })
+            } catch (error) {
+                console.error('Error creating comment:', error)
+                return res.status(500).json({ error: 'Failed to create comment' })
+            }
         }
+
+        return withAuth(postHandler, authOptions)(req, res)
     }
 
     return res.status(405).json({ error: 'Method not allowed' })

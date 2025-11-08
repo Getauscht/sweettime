@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,7 +15,7 @@ import { Shield, ShieldOff } from 'lucide-react'
 import Image from 'next/image'
 
 export default function TotpSetupPage() {
-    const { data: session, status } = useSession()
+    const { status } = useSession()
     const router = useRouter()
 
     const [qrCode, setQrCode] = useState('')

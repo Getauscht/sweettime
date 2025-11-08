@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -10,12 +11,10 @@ import { prisma } from '@/lib/prisma'
  * 
  * Detects work type automatically and delegates to appropriate table
  */
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const userId = (req as any).auth?.userId
 
-    if (!session?.user?.id) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
 
     const { workId } = req.query
     if (!workId || typeof workId !== 'string') {
@@ -54,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'GET') {
             const favorite = await prisma.favorite.findFirst({
                 where: {
-                    userId: session.user.id,
+                    userId,
                     ...(isWebtoon ? { webtoonId: workDbId } : { novelId: workDbId })
                 }
             })
@@ -69,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Check if already favorited
             const existing = await prisma.favorite.findFirst({
                 where: {
-                    userId: session.user.id,
+                    userId,
                     ...(isWebtoon ? { webtoonId: workDbId } : { novelId: workDbId })
                 }
             })
@@ -84,7 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             await prisma.favorite.create({
                 data: {
-                    userId: session.user.id,
+                    userId,
                     ...(isWebtoon ? { webtoonId: workDbId } : { novelId: workDbId })
                 }
             })
@@ -98,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'DELETE') {
             await prisma.favorite.deleteMany({
                 where: {
-                    userId: session.user.id,
+                    userId,
                     ...(isWebtoon ? { webtoonId: workDbId } : { novelId: workDbId })
                 }
             })
@@ -115,3 +114,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Internal server error' })
     }
 }
+
+export default withAuth(handler, authOptions)

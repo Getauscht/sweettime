@@ -239,6 +239,7 @@ export async function initializeRBAC() {
         }
 
         // Create default roles
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [key, roleConfig] of Object.entries(DEFAULT_ROLES)) {
             const role = await prisma.role.upsert({
                 where: { name: roleConfig.name },

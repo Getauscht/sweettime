@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -139,8 +142,8 @@ export default function ObrasManagement() {
                                 <FileText className="h-12 w-12 text-white/40" />
                             )}
                             <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${work.type === 'webtoon' 
-                                    ? 'bg-purple-500/20 text-purple-300' 
-                                    : 'bg-blue-500/20 text-blue-300'
+                                ? 'bg-purple-500/20 text-purple-300' 
+                                : 'bg-blue-500/20 text-blue-300'
                                 }`}>
                                 {work.type === 'webtoon' ? 'Webtoon' : 'Novel'}
                             </div>

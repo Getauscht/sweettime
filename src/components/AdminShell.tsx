@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, BookOpen, User, Tag, Users, BarChart3, Settings, Menu, X, Shield, FileText } from 'lucide-react'
+import { Home, BookOpen, User, Tag, Users, BarChart3, Settings, Menu, X, Shield } from 'lucide-react'
 
 const navigation = [
     { name: 'Painel de Controle', href: '/admin', icon: Home },

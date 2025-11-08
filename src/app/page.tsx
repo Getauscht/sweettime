@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -107,26 +108,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error loading genre webtoons:', error)
-    }
-  }
-
-  const isValidImageSrc = (src?: string) => {
-    if (!src) return false
-    const trimmed = src.trim()
-    if (!trimmed) return false
-    // reject literal strings that sometimes come from malformed APIs
-    if (trimmed === 'null' || trimmed === 'undefined') return false
-    try {
-      // new URL accepts relative URLs when a base is provided (browser runtime)
-      if (typeof window !== 'undefined') {
-        new URL(trimmed, window.location.href)
-      } else {
-        // server-side fallback
-        new URL(trimmed, 'http://localhost')
-      }
-      return true
-    } catch (e) {
-      return false
     }
   }
 

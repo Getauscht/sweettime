@@ -1,3 +1,5 @@
+/* eslint-disable prefer-rest-params */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server'
 import { getServerSession, type Session } from 'next-auth'
 import { hasPermission, hasAnyPermission, PermissionName } from './permissions'
@@ -6,6 +8,7 @@ import { prisma } from '../prisma'
 /**
  * Middleware to require authentication
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function requireAuth(authOptions?: any) {
     // Support both Pages API (req,res) and App Router / generic usage.
     // Signatures supported:
@@ -108,6 +111,9 @@ export function withAuth(
                 return res.status(401).json({ error: 'Unauthorized' })
             }
 
+            // Attach auth info to the req object so Pages API handlers can access it
+            ; (req as any).auth = { session, userId: session.user.id }
+
             // If original handler is a Pages API handler (req,res), call it directly
             try {
                 return await handler(req, res)
@@ -166,6 +172,7 @@ export function withPermission(
 
             // Admin users bypass permission checks for administrative routes
             if (await isAdminSession(session)) {
+                ; (req as any).auth = { session, userId }
                 return handler(req, res)
             }
 
@@ -175,6 +182,7 @@ export function withPermission(
                 return res.status(403).json({ error: 'Forbidden', message: 'Insufficient permissions' })
             }
 
+            ; (req as any).auth = { session, userId }
             return handler(req, res)
         }
 

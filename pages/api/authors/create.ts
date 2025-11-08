@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
@@ -14,8 +15,6 @@ const createAuthorSchema = z.object({
     avatar: z.string().url().optional().nullable(),
     socialLinks: z.record(z.string(), z.string()).optional().nullable(),
 })
-
-type CreateAuthorInput = z.infer<typeof createAuthorSchema>
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const session = await getServerSession(req, res, authOptions)

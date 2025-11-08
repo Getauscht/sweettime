@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { prisma } from '@/lib/prisma'
-import { generateTOTPSecret, generateQRCode, verifyTOTP } from '@/lib/auth/totp'
+import { generateTOTPSecret, verifyTOTP } from '@/lib/auth/totp'
 import { encryptSecret, decryptSecret, sha256hex } from '@/lib/crypto'
 import { authenticator } from 'otplib'
 import { randomBytes } from 'crypto'
@@ -32,7 +32,7 @@ async function run() {
         console.log('TOTP verification OK')
 
         // promote to permanent
-        await prisma.user.update({ where: { id: user.id }, data: { totpSecretEncrypted: encrypted, totpTempSecretEncrypted: null, totpTempExpires: null, totpEnabled: true } as any })
+        await prisma.user.update({ where: { id: user.id }, data: { totpSecretEncrypted: encrypted, totpTempSecretEncrypted: null, totpTempExpires: null, totpEnabled: true } })
 
         const u2 = await prisma.user.findUnique({ where: { id: user.id } })
         if (!u2 || !u2.totpEnabled) throw new Error('TOTP not enabled after promote')

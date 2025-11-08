@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
@@ -5,7 +6,7 @@ import { useSession, signIn } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { ThumbsUp, MessageCircle, Share2, MoreVertical, Bold, Italic, Strikethrough, AtSign, Trash2, Flag, Eye, EyeOff, Underline } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Share2, MoreVertical, Bold, Italic, Strikethrough, AtSign, Trash2, Eye, EyeOff, Underline } from 'lucide-react'
 import { MarkdownRenderer } from './MarkdownRenderer'
 
 interface Mention {

@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
-import { authOptions } from '../../auth/[...nextauth]';
-import { getServerSession } from 'next-auth';
-import { isUserMemberOfGroup } from '@/lib/auth/groups';
-import z from 'zod';
+import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
+import { isUserMemberOfGroup } from '@/lib/auth/groups'
+import z from 'zod'
 
 const createChapterSchema = z.object({
     number: z.number().int().positive(),
@@ -18,9 +19,7 @@ const updateWebtoonSchema = z.object({
     title: z.string().min(1).max(100).optional(),
 })
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const { webtoonId } = req.query
 
@@ -28,10 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Invalid webtoon identifier' })
     }
 
-    if (!session?.user) {
+    const userId = (req as any).auth?.userId
+
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
-    
+
     if (req.method == 'GET') {
         try {
             // Try to find by slug first, then by ID
@@ -164,7 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Verify user is member of at least one selected group
             let userCanCreateIn = false
             for (const groupId of parsed.groupIds) {
-                const isMember = await isUserMemberOfGroup(session.user.id, groupId)
+                const isMember = await isUserMemberOfGroup(userId as string, groupId)
                 if (isMember) {
                     userCanCreateIn = true
                     break
@@ -276,3 +277,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     }
 }
+
+export default withAuth(handler, authOptions)

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
-import Link from 'next/link'
 import AuthorProfile from '@/components/AuthorProfile'
 import AuthorWebtoonsList from '@/components/AuthorWebtoonsList'
 

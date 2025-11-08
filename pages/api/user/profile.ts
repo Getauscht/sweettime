@@ -1,22 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const userId = (req as any).auth?.userId
 
-    if (!session?.user?.id) {
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
 
-    const userId = session.user.id
     if (req.method === 'GET') {
         try {
             const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
+                where: { id: userId },
                 select: {
                     id: true,
                     name: true,
@@ -103,3 +103,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

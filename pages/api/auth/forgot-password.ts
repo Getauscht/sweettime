@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { sendPasswordResetEmail } from '@/lib/auth/email'
 import { randomBytes } from 'crypto'
 import { sha256hex } from '@/lib/crypto'
-import { consumeRateLimit, getRateLimiter } from '@/lib/rateLimit'
+import { consumeRateLimit } from '@/lib/rateLimit'
 import { z } from 'zod'
 
 const forgotPasswordSchema = z.object({

@@ -1,7 +1,5 @@
 #!/usr/bin/env tsx
 import 'dotenv/config'
-import { prisma } from '@/lib/prisma'
-import { encryptSecret } from '@/lib/crypto'
 
 async function main() {
     const key = process.env.APP_TOTP_KEY

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/Toast'
-import { ArrowLeft, Users, FileText } from 'lucide-react'
+import { Users, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CreateGroupPage() {

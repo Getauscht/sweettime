@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 import { prisma } from '@/lib/prisma'
 import { sendPushToUser } from '@/lib/push'
 

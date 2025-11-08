@@ -1,5 +1,4 @@
-import { Prisma } from '@prisma/client'
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function normalizeName(name: string, maxLen = 100) {
     if (!name) return 'author'
     // Remove diacritics, lower case, keep alphanum and spaces

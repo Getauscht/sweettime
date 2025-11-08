@@ -51,7 +51,7 @@ export default async function handler(
         if (user.totpTempSecretEncrypted && user.totpTempExpires && user.totpTempExpires > new Date()) {
             try {
                 secretPlain = decryptSecret(user.totpTempSecretEncrypted)
-            } catch (e) {
+            } catch {
                 // ignore decrypt errors
             }
         }
@@ -60,7 +60,7 @@ export default async function handler(
         if (!secretPlain && user.totpSecretEncrypted) {
             try {
                 secretPlain = decryptSecret(user.totpSecretEncrypted)
-            } catch (e) {
+            } catch {
                 // ignore
             }
         }

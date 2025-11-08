@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 (async () => {
     // Simple test runner for sendPasswordResetEmail / sendVerificationEmail
     // - Creates an Ethereal account

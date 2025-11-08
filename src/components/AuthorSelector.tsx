@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -226,7 +227,7 @@ export function AuthorSelector({ label, selectedIds, onChange, multiple = false,
                                         size="sm"
                                     >
                                         <Plus className="h-4 w-4 mr-2" />
-                                        Cadastrar "{searchTerm}"
+                                        Cadastrar &quot;{searchTerm}&quot;
                                     </Button>
                                 </div>
                             )}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
@@ -323,7 +324,7 @@ export const POST = withPermission(
                         if (assignGroupId) {
                             try {
                                 await tx.webtoonGroup.create({ data: { webtoonId: work.id, groupId: assignGroupId } })
-                            } catch (e) { }
+                            } catch { }
                         }
 
                         await tx.activityLog.create({
@@ -532,7 +533,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 const json = JSON.parse(resBody)
                 return res.status(response.status).json(json)
-            } catch (e) { }
+            } catch { }
         }
 
         res.status(response.status)

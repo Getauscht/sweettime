@@ -1,12 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
-import { Button } from '@/components/ui/button'
 import { Heart, Clock, BookOpen, User } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -68,7 +67,6 @@ interface ReadingHistory {
 
 export default function LibraryPage() {
     const { data: session, status } = useSession()
-    const router = useRouter()
 
     const [activeTab, setActiveTab] = useState<'reading' | 'favorites' | 'following'>('reading')
     const [favorites, setFavorites] = useState<Favorite[]>([])

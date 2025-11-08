@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { isAdminSession } from '@/lib/auth/middleware'
 import { z } from 'zod'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const auth = (req as any).auth
+    const session = auth?.session
 
     if (!session || !(await isAdminSession(session))) {
         return res.status(403).json({ error: 'Forbidden' })
@@ -72,3 +74,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

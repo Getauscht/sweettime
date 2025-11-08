@@ -59,7 +59,7 @@ export default function GenresPage() {
                 const error = await response.json()
                 toast(error.error, 'error')
             }
-        } catch (error) {
+        } catch {
             toast('Falha ao salvar gênero', 'error')
         }
     }
@@ -71,7 +71,7 @@ export default function GenresPage() {
             const response = await fetch(`/api/admin/genres/${id}`, { method: 'DELETE' })
             if (response.ok) fetchGenres()
             else toast((await response.json()).error, 'error')
-        } catch (error) {
+        } catch {
             toast('Failed to delete', 'error')
         }
     }

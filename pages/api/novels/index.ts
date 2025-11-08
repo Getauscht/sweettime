@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { isUserInAnyGroup } from '@/lib/auth/groups'
 import { z } from 'zod'
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 
 const createNovelSchema = z.object({
     title: z.string().min(1).max(150),
@@ -13,15 +14,15 @@ const createNovelSchema = z.object({
     status: z.enum(['ongoing', 'completed', 'hiatus', 'cancelled']).default('ongoing'),
 })
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const userId = (req as any).auth?.userId
 
-    if (!session?.user) {
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
 
     // Check if user is a member of at least one group (authors)
-    const isGroupMember = await isUserInAnyGroup(session.user.id)
+    const isGroupMember = await isUserInAnyGroup(userId)
     if (!isGroupMember) {
         return res.status(403).json({ error: 'You must be a member of a group to manage novels' })
     }
@@ -93,3 +94,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).end()
     }
 }
+
+export default withAuth(handler, authOptions)

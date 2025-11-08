@@ -1,5 +1,5 @@
-// web-push has its own types; if not installed, allow ts to continue
-// @ts-ignore
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import webpush from 'web-push'
 import { prisma } from '@/lib/prisma'
 

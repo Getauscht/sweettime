@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { isUserMemberOfGroup } from '@/lib/auth/groups'
 import { z } from 'zod'
@@ -12,11 +13,12 @@ const createChapterSchema = z.object({
     groupIds: z.array(z.string()).min(1),
 })
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
+async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { webtoonId } = req.query
 
-    if (!session?.user) {
+    const userId = (req as any).auth?.userId
+
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
 
@@ -39,10 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Verify user is member of at least one selected group
-        const userId = (session.user as any)?.id
         let userCanCreateIn = false
         for (const groupId of parsed.groupIds) {
-            const isMember = await isUserMemberOfGroup(userId, groupId)
+            const isMember = await isUserMemberOfGroup(userId as string, groupId)
             if (isMember) {
                 userCanCreateIn = true
                 break
@@ -102,3 +103,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Failed to create chapter', details: error.message })
     }
 }
+
+export default withAuth(handler, authOptions)

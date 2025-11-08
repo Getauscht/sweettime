@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { IncomingForm } from 'formidable'
 import sharp from 'sharp'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { getServerSession } from 'next-auth'
 import { authOptions } from './auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { PERMISSIONS, hasAnyPermission } from '@/lib/auth/permissions'
 import { isUserMemberOfGroup } from '@/lib/auth/groups'
@@ -16,7 +17,9 @@ export const config = {
     },
 }
 
-export default async function handler(
+export default withAuth(handler, authOptions)
+
+async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
@@ -30,8 +33,9 @@ export default async function handler(
     const allowedMimePrefixes = ['image/']
 
     try {
-        const session = await getServerSession(req, res, authOptions)
-        if (!session?.user?.id) {
+        const auth = (req as any).auth
+        const userId = auth?.userId
+        if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' })
         }
 
@@ -77,7 +81,7 @@ export default async function handler(
 
         // If this is a branding asset, require settings manage permission
         if (type === 'logo' || type === 'favicon') {
-            const canManageSettings = await hasAnyPermission(session.user.id, [PERMISSIONS.SETTINGS_MANAGE])
+            const canManageSettings = await hasAnyPermission(userId, [PERMISSIONS.SETTINGS_MANAGE])
             if (!canManageSettings) {
                 if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
                 return res.status(403).json({ error: 'Forbidden: insufficient permissions to upload branding assets' })
@@ -103,7 +107,7 @@ export default async function handler(
 
         // If this is a chapter upload, ensure the user is a member of the webtoon's group (or has upload/assign permission)
         if (type === 'chapter') {
-            const canAssign = await hasAnyPermission(session.user.id, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
+            const canAssign = await hasAnyPermission(userId, [PERMISSIONS.GROUPS_UPLOAD, PERMISSIONS.GROUPS_ASSIGN])
             if (webtoonId) {
                 const webtoon = await prisma.webtoon.findUnique({ where: { id: webtoonId }, include: { webtoonGroups: true } })
                 if (!webtoon) {
@@ -114,7 +118,7 @@ export default async function handler(
                     // require membership in at least one of the groups that claimed this webtoon
                     let allowed = false
                     for (const wg of webtoon.webtoonGroups) {
-                        if (await isUserMemberOfGroup(session.user.id, wg.groupId)) { allowed = true; break }
+                        if (await isUserMemberOfGroup(userId, wg.groupId)) { allowed = true; break }
                     }
                     if (!allowed) {
                         if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
@@ -123,7 +127,7 @@ export default async function handler(
                 }
             } else if (scanlationGroupIdField) {
                 if (!canAssign) {
-                    const isMember = await isUserMemberOfGroup(session.user.id, scanlationGroupIdField)
+                    const isMember = await isUserMemberOfGroup(userId, scanlationGroupIdField)
                     if (!isMember) {
                         if (tempPath) await fs.unlink(tempPath).catch(() => undefined)
                         return res.status(403).json({ error: 'Forbidden: not a member of the target group' })

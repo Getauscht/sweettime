@@ -1,16 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]'
+import { withAuth } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/prisma'
 import { PERMISSIONS } from '@/lib/auth/permissions'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const session = await getServerSession(req, res, authOptions)
-
-    if (!session?.user?.id) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
-
+async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { commentId } = req.query
 
     if (typeof commentId !== 'string') {
@@ -29,9 +24,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(404).json({ error: 'Comment not found' })
             }
 
+            const userId = (req as any).auth?.userId
+
             // Check if user has permission to moderate
             const userWithPermissions = await prisma.user.findUnique({
-                where: { id: session.user.id },
+                where: { id: userId },
                 select: {
                     role: {
                         select: {
@@ -50,15 +47,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const canModerate = userWithPermissions?.role?.rolePermissions?.some(rp => rp.permission.name === PERMISSIONS.WEBTOONS_EDIT)
 
             // Only the comment author can delete their own comment, or moderators can disable any comment
-            if (comment.userId !== session.user.id && !canModerate) {
+            if (comment.userId !== userId && !canModerate) {
                 return res.status(403).json({ error: 'Forbidden: You can only delete your own comments' })
             }
 
             // Soft delete comment: mark as deleted by owner or moderator
-            const deletedBy = comment.userId === session.user.id ? 'owner' : 'moderator'
+            const deletedBy = comment.userId === userId ? 'owner' : 'moderator'
             await prisma.comment.update({
                 where: { id: commentId },
-                data: { deletedAt: new Date(), deletedBy: 'owner' } as any
+                data: { deletedAt: new Date(), deletedBy: deletedBy } as any
             })
 
             return res.status(200).json({ success: true })
@@ -70,3 +67,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler, authOptions)

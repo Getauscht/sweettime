@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -65,7 +67,7 @@ export default function AuthorsPage() {
                 const error = await response.json()
                 toast(error.error, 'error')
             }
-        } catch (error) {
+        } catch {
             toast('Falha ao salvar autor', 'error')
         }
     }
@@ -78,7 +80,7 @@ export default function AuthorsPage() {
             const response = await fetch(`/api/admin/authors/${id}`, { method: 'DELETE' })
             if (response.ok) fetchAuthors()
             else toast((await response.json()).error, 'error')
-        } catch (error) {
+        } catch {
             toast('Falha ao excluir autor', 'error')
         }
     }
@@ -98,7 +100,7 @@ export default function AuthorsPage() {
                 const data = await response.json()
                 setForm(prev => ({ ...prev, avatar: data.url }))
             }
-        } catch (error) {
+        } catch {
             toast('Falha ao enviar arquivo', 'error')
         } finally {
             setUploading(false)
