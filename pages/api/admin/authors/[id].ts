@@ -52,7 +52,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
             // If slug is being changed, attempt the update and handle unique constraint errors
             try {
-                const updated = await prisma.$transaction(async (tx) => {
+                const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
                     const author = await tx.author.update({ where: { id: id as string }, data: { ...(name && { name }), ...(slug && { slug }), ...(bio !== undefined && { bio }), ...(avatar !== undefined && { avatar }) } })
                     await tx.activityLog.create({ data: { performedBy: session.user.id, action: 'update_author', entityType: 'Author', entityId: author.id, details: `Updated author: ${author.name}` } })
                     return author
