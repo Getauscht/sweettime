@@ -1,14 +1,14 @@
 # Multi-stage Dockerfile for Next.js production build
 # Builds the app in a builder stage and creates a lightweight runtime image
 
-FROM node:20-bullseye-slim AS builder
+FROM node:22-bullseye-slim AS builder
 WORKDIR /app
 
 # Copy package files first to leverage Docker cache
 COPY package.json package-lock.json* ./
 
 # Install all dependencies (including dev deps needed for build)
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the source
 COPY . .
@@ -16,8 +16,11 @@ COPY . .
 # Build the Next.js app (uses script from package.json)
 RUN npm run build
 
+# Generate prisma client
+RUN npx prisma generate
+
 ### Production image
-FROM node:20-slim AS runner
+FROM node:22-bullseye-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
