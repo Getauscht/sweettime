@@ -13,11 +13,11 @@ RUN npm install
 # Copy the rest of the source
 COPY . .
 
-# Build the Next.js app (uses script from package.json)
-RUN npm run build
-
 # Generate prisma client
 RUN npx prisma generate
+
+# Build the Next.js app (uses script from package.json)
+RUN npm run build
 
 ### Production image
 FROM node:22-bullseye-slim AS runner
