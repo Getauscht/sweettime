@@ -166,240 +166,238 @@ export default function AdminSettingsPage() {
     }
 
     return (
-        <AdminShell>
-            <div className="container mx-auto py-8 px-4 max-w-4xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">Configurações</h1>
-                    <p className="text-gray-400">
-                        Configure as opções do sistema, incluindo email e magic links
-                    </p>
-                </div>
-
-                {message && (
-                    <Alert
-                        className={`mb-6 ${message.includes('sucesso')
-                            ? 'bg-green-600/20 border-green-600/50 text-green-100'
-                            : 'bg-red-600/20 border-red-600/50 text-red-100'
-                            }`}
-                    >
-                        <AlertDescription>{message}</AlertDescription>
-                    </Alert>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <Card className="bg-[#0f0b14] border-white/10">
-                        <CardHeader>
-                            <CardTitle className="text-white">Configurações Gerais</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Informações básicas do site
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-white">Logo do Site</Label>
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-32 h-12 bg-white/5 flex items-center justify-center border border-white/5">
-                                        {settings.logoUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={settings.logoUrl} alt="Logo" className="max-h-10 object-contain" />
-                                        ) : (
-                                            <span className="text-sm text-gray-400">Sem logo</span>
-                                        )}
-                                    </div>
-                                    <input
-                                        ref={logoInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={async (e) => {
-                                            const f = e.target.files?.[0] || null
-                                            if (!f) return
-                                            setLogoFileName(f.name)
-                                            const url = await uploadFile(f, 'logo')
-                                            if (url) setSettings(prev => ({ ...prev, logoUrl: url }))
-                                        }}
-                                        disabled={uploading}
-                                        className="sr-only"
-                                        aria-hidden
-                                    />
-                                    <div className="flex items-center space-x-2">
-                                        <Button
-                                            type="button"
-                                            onClick={() => logoInputRef.current?.click()}
-                                            disabled={uploading}
-                                            className="h-9"
-                                        >
-                                            {uploading ? 'Enviando...' : 'Enviar logo'}
-                                        </Button>
-                                        <span className="text-sm text-gray-400">{logoFileName ?? (settings.logoUrl ? 'Já enviado' : 'Nenhum arquivo')}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-white">Favicon</Label>
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-10 h-10 bg-white/5 flex items-center justify-center border border-white/5">
-                                        {settings.faviconUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={settings.faviconUrl} alt="Favicon" className="w-8 h-8 object-contain" />
-                                        ) : (
-                                            <span className="text-sm text-gray-400">Sem ícone</span>
-                                        )}
-                                    </div>
-                                    <input
-                                        ref={faviconInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={async (e) => {
-                                            const f = e.target.files?.[0] || null
-                                            if (!f) return
-                                            setFaviconFileName(f.name)
-                                            const url = await uploadFile(f, 'favicon')
-                                            if (url) setSettings(prev => ({ ...prev, faviconUrl: url }))
-                                        }}
-                                        disabled={uploading}
-                                        className="sr-only"
-                                        aria-hidden
-                                    />
-                                    <div className="flex items-center space-x-2">
-                                        <Button
-                                            type="button"
-                                            onClick={() => faviconInputRef.current?.click()}
-                                            disabled={uploading}
-                                            className="h-9"
-                                        >
-                                            {uploading ? 'Enviando...' : 'Enviar ícone'}
-                                        </Button>
-                                        <span className="text-sm text-gray-400">{faviconFileName ?? (settings.faviconUrl ? 'Já enviado' : 'Nenhum arquivo')}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="siteName" className="text-white">Nome do Site</Label>
-                                <Input
-                                    id="siteName"
-                                    type="text"
-                                    value={settings.siteName}
-                                    onChange={(e) => handleChange('siteName', e.target.value)}
-                                    disabled={saving}
-                                    className={`bg-white/5 border-white/10 text-white ${errors.siteName ? 'border-red-500' : ''
-                                        }`}
-                                />
-                                {errors.siteName && (
-                                    <p className="text-sm text-red-500">{errors.siteName}</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-[#0f0b14] border-white/10">
-                        <CardHeader>
-                            <CardTitle className="text-white">Configurações de Email</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Configure o remetente dos emails do sistema
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="fromName" className="text-white">Nome do Remetente</Label>
-                                <Input
-                                    id="fromName"
-                                    type="text"
-                                    value={settings.fromName}
-                                    onChange={(e) => handleChange('fromName', e.target.value)}
-                                    disabled={saving}
-                                    className={`bg-white/5 border-white/10 text-white ${errors.fromName ? 'border-red-500' : ''
-                                        }`}
-                                />
-                                {errors.fromName && (
-                                    <p className="text-sm text-red-500">{errors.fromName}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="fromEmail" className="text-white">Email do Remetente</Label>
-                                <Input
-                                    id="fromEmail"
-                                    type="email"
-                                    value={settings.fromEmail}
-                                    onChange={(e) => handleChange('fromEmail', e.target.value)}
-                                    disabled={saving}
-                                    className={`bg-white/5 border-white/10 text-white ${errors.fromEmail ? 'border-red-500' : ''
-                                        }`}
-                                />
-                                {errors.fromEmail && (
-                                    <p className="text-sm text-red-500">{errors.fromEmail}</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-[#0f0b14] border-white/10">
-                        <CardHeader>
-                            <CardTitle className="text-white">Configurações de Magic Link</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Configure o comportamento dos links mágicos de recuperação de senha
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="magicLinkTtlMinutes" className="text-white">
-                                    Tempo de Expiração (minutos)
-                                </Label>
-                                <Input
-                                    id="magicLinkTtlMinutes"
-                                    type="number"
-                                    min="5"
-                                    max="1440"
-                                    value={settings.magicLinkTtlMinutes}
-                                    onChange={(e) => handleChange('magicLinkTtlMinutes', parseInt(e.target.value))}
-                                    disabled={saving}
-                                    className={`bg-white/5 border-white/10 text-white ${errors.magicLinkTtlMinutes ? 'border-red-500' : ''
-                                        }`}
-                                />
-                                <p className="text-sm text-gray-400">Entre 5 minutos e 24 horas (1440 minutos)</p>
-                                {errors.magicLinkTtlMinutes && (
-                                    <p className="text-sm text-red-500">{errors.magicLinkTtlMinutes}</p>
-                                )}
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="magicLinkEnabled"
-                                    checked={settings.magicLinkEnabled}
-                                    onChange={(e) => handleChange('magicLinkEnabled', e.target.checked)}
-                                    disabled={saving}
-                                    className="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500"
-                                />
-                                <Label htmlFor="magicLinkEnabled" className="text-white cursor-pointer">
-                                    Habilitar envio de magic links
-                                </Label>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="flex justify-end space-x-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.push('/admin')}
-                            disabled={saving}
-                            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={saving}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                            {saving ? 'Salvando...' : 'Salvar Configurações'}
-                        </Button>
-                    </div>
-                </form>
+        <div className="container mx-auto py-8 px-4 max-w-4xl">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-white mb-2">Configurações</h1>
+                <p className="text-gray-400">
+                    Configure as opções do sistema, incluindo email e magic links
+                </p>
             </div>
-        </AdminShell>
+
+            {message && (
+                <Alert
+                    className={`mb-6 ${message.includes('sucesso')
+                        ? 'bg-green-600/20 border-green-600/50 text-green-100'
+                        : 'bg-red-600/20 border-red-600/50 text-red-100'
+                        }`}
+                >
+                    <AlertDescription>{message}</AlertDescription>
+                </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <Card className="bg-[#0f0b14] border-white/10">
+                    <CardHeader>
+                        <CardTitle className="text-white">Configurações Gerais</CardTitle>
+                        <CardDescription className="text-gray-400">
+                            Informações básicas do site
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-white">Logo do Site</Label>
+                            <div className="flex items-center space-x-4">
+                                <div className="w-32 h-12 bg-white/5 flex items-center justify-center border border-white/5">
+                                    {settings.logoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={settings.logoUrl} alt="Logo" className="max-h-10 object-contain" />
+                                    ) : (
+                                        <span className="text-sm text-gray-400">Sem logo</span>
+                                    )}
+                                </div>
+                                <input
+                                    ref={logoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        const f = e.target.files?.[0] || null
+                                        if (!f) return
+                                        setLogoFileName(f.name)
+                                        const url = await uploadFile(f, 'logo')
+                                        if (url) setSettings(prev => ({ ...prev, logoUrl: url }))
+                                    }}
+                                    disabled={uploading}
+                                    className="sr-only"
+                                    aria-hidden
+                                />
+                                <div className="flex items-center space-x-2">
+                                    <Button
+                                        type="button"
+                                        onClick={() => logoInputRef.current?.click()}
+                                        disabled={uploading}
+                                        className="h-9"
+                                    >
+                                        {uploading ? 'Enviando...' : 'Enviar logo'}
+                                    </Button>
+                                    <span className="text-sm text-gray-400">{logoFileName ?? (settings.logoUrl ? 'Já enviado' : 'Nenhum arquivo')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-white">Favicon</Label>
+                            <div className="flex items-center space-x-4">
+                                <div className="w-10 h-10 bg-white/5 flex items-center justify-center border border-white/5">
+                                    {settings.faviconUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={settings.faviconUrl} alt="Favicon" className="w-8 h-8 object-contain" />
+                                    ) : (
+                                        <span className="text-sm text-gray-400">Sem ícone</span>
+                                    )}
+                                </div>
+                                <input
+                                    ref={faviconInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        const f = e.target.files?.[0] || null
+                                        if (!f) return
+                                        setFaviconFileName(f.name)
+                                        const url = await uploadFile(f, 'favicon')
+                                        if (url) setSettings(prev => ({ ...prev, faviconUrl: url }))
+                                    }}
+                                    disabled={uploading}
+                                    className="sr-only"
+                                    aria-hidden
+                                />
+                                <div className="flex items-center space-x-2">
+                                    <Button
+                                        type="button"
+                                        onClick={() => faviconInputRef.current?.click()}
+                                        disabled={uploading}
+                                        className="h-9"
+                                    >
+                                        {uploading ? 'Enviando...' : 'Enviar ícone'}
+                                    </Button>
+                                    <span className="text-sm text-gray-400">{faviconFileName ?? (settings.faviconUrl ? 'Já enviado' : 'Nenhum arquivo')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="siteName" className="text-white">Nome do Site</Label>
+                            <Input
+                                id="siteName"
+                                type="text"
+                                value={settings.siteName}
+                                onChange={(e) => handleChange('siteName', e.target.value)}
+                                disabled={saving}
+                                className={`bg-white/5 border-white/10 text-white ${errors.siteName ? 'border-red-500' : ''
+                                    }`}
+                            />
+                            {errors.siteName && (
+                                <p className="text-sm text-red-500">{errors.siteName}</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-[#0f0b14] border-white/10">
+                    <CardHeader>
+                        <CardTitle className="text-white">Configurações de Email</CardTitle>
+                        <CardDescription className="text-gray-400">
+                            Configure o remetente dos emails do sistema
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="fromName" className="text-white">Nome do Remetente</Label>
+                            <Input
+                                id="fromName"
+                                type="text"
+                                value={settings.fromName}
+                                onChange={(e) => handleChange('fromName', e.target.value)}
+                                disabled={saving}
+                                className={`bg-white/5 border-white/10 text-white ${errors.fromName ? 'border-red-500' : ''
+                                    }`}
+                            />
+                            {errors.fromName && (
+                                <p className="text-sm text-red-500">{errors.fromName}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="fromEmail" className="text-white">Email do Remetente</Label>
+                            <Input
+                                id="fromEmail"
+                                type="email"
+                                value={settings.fromEmail}
+                                onChange={(e) => handleChange('fromEmail', e.target.value)}
+                                disabled={saving}
+                                className={`bg-white/5 border-white/10 text-white ${errors.fromEmail ? 'border-red-500' : ''
+                                    }`}
+                            />
+                            {errors.fromEmail && (
+                                <p className="text-sm text-red-500">{errors.fromEmail}</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-[#0f0b14] border-white/10">
+                    <CardHeader>
+                        <CardTitle className="text-white">Configurações de Magic Link</CardTitle>
+                        <CardDescription className="text-gray-400">
+                            Configure o comportamento dos links mágicos de recuperação de senha
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="magicLinkTtlMinutes" className="text-white">
+                                Tempo de Expiração (minutos)
+                            </Label>
+                            <Input
+                                id="magicLinkTtlMinutes"
+                                type="number"
+                                min="5"
+                                max="1440"
+                                value={settings.magicLinkTtlMinutes}
+                                onChange={(e) => handleChange('magicLinkTtlMinutes', parseInt(e.target.value))}
+                                disabled={saving}
+                                className={`bg-white/5 border-white/10 text-white ${errors.magicLinkTtlMinutes ? 'border-red-500' : ''
+                                    }`}
+                            />
+                            <p className="text-sm text-gray-400">Entre 5 minutos e 24 horas (1440 minutos)</p>
+                            {errors.magicLinkTtlMinutes && (
+                                <p className="text-sm text-red-500">{errors.magicLinkTtlMinutes}</p>
+                            )}
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="magicLinkEnabled"
+                                checked={settings.magicLinkEnabled}
+                                onChange={(e) => handleChange('magicLinkEnabled', e.target.checked)}
+                                disabled={saving}
+                                className="w-4 h-4 text-purple-600 bg-white/5 border-white/10 rounded focus:ring-purple-500"
+                            />
+                            <Label htmlFor="magicLinkEnabled" className="text-white cursor-pointer">
+                                Habilitar envio de magic links
+                            </Label>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="flex justify-end space-x-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.push('/admin')}
+                        disabled={saving}
+                        className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="submit"
+                        disabled={saving}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                        {saving ? 'Salvando...' : 'Salvar Configurações'}
+                    </Button>
+                </div>
+            </form>
+        </div>
     )
 }

@@ -48,7 +48,7 @@ export default function GroupsIndexPage() {
             <main className="container mx-auto px-4 py-8">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">Grupos</h1>
+                        <h1 data-page-title="Grupos" className="text-3xl font-bold text-white">Grupos</h1>
                         <p className="text-white/60">Explore grupos de scanlation e comunidades</p>
                     </div>
                     <div className="flex items-center gap-3">

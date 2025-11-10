@@ -52,7 +52,7 @@ export default function WebtoonsManagement() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Webtoons</h1>
+                    <h1 data-page-title="Webtoons" className="text-3xl font-bold text-white">Webtoons</h1>
                     <p className="text-white/60 mt-2">Gerencie todos os webtoons do sistema</p>
                 </div>
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => router.push('/admin/webtoons/new')}>

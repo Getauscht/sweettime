@@ -105,7 +105,7 @@ export default function SearchPage() {
             <div className="container mx-auto px-4 py-12 max-w-6xl">
                 {/* Hero Section */}
                 <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-6">
+                    <h1 data-page-title="Encontre Sua Próxima História Favorita" className="text-4xl md:text-5xl font-bold mb-6">
                         Encontre Sua Próxima História Favorita
                     </h1>
 

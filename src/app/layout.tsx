@@ -17,10 +17,17 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const settings = await prisma.settings.findFirst()
+    const siteName = settings?.siteName?.trim() || 'SweetTime'
 
+    // Use Metadata title object to provide a default and a template so
+    // individual pages can set their own titles which will be formatted
+    // as "<Page Title> - <Site Name>" automatically.
     return {
-      title: settings?.siteName || 'SweetTime - Autenticação',
-      description: 'Sistema de autenticação com Next.js, NextAuth e MySQL',
+      title: {
+        default: siteName,
+        template: `%s - ${siteName}`,
+      },
+      description: 'Reino Doce',
       icons: settings?.faviconUrl
         ? { icon: settings.faviconUrl, shortcut: settings.faviconUrl, apple: settings.faviconUrl }
         : undefined,
@@ -28,8 +35,11 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch (err) {
     console.error('Error loading settings for metadata', err)
     return {
-      title: 'SweetTime - Autenticação',
-      description: 'Sistema de autenticação com Next.js, NextAuth e MySQL',
+      title: {
+        default: 'SweetTime',
+        template: '%s - SweetTime',
+      },
+      description: 'Reino Doce',
     }
   }
 }

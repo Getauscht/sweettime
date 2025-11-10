@@ -257,7 +257,7 @@ export default function WorkPage() {
 
                     <div className="md:col-span-2 space-y-6">
                         <div>
-                            <h1 className="text-4xl font-bold text-gray-100 mb-2">{work.title}</h1>
+                            <h1 data-page-title={work.title} className="text-4xl font-bold text-gray-100 mb-2">{work.title}</h1>
                             {authors.length > 0 && (
                                 <>
                                     <span className="text-sm text-gray-500">por </span>

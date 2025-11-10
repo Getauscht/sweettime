@@ -273,7 +273,10 @@ export default function ChapterPage() {
                         </div>
 
                         <div className="flex-1 text-center">
-                            <h1 className="text-lg font-semibold text-gray-100 truncate">
+                            <h1
+                                data-page-title={chapter ? `${chapter.work.title} - Capítulo ${chapter.number}${chapter.title ? `: ${chapter.title}` : ''}` : undefined}
+                                className="text-lg font-semibold text-gray-100 truncate"
+                            >
                                 {chapter.work.title}
                             </h1>
                             <p className="text-sm text-gray-400">

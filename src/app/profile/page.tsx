@@ -208,7 +208,7 @@ export default function ProfilePage() {
                             </AvatarFallback>
                         </Avatar>
 
-                        <h1 className="text-4xl font-bold text-white mt-6">{profileData.name || 'Usuário'}</h1>
+                        <h1 data-page-title={profileData.name || 'Usuário'} className="text-4xl font-bold text-white mt-6">{profileData.name || 'Usuário'}</h1>
                         <p className="text-white/60 mt-2">Leitor ávido e entusiasta de webtoons. Sempre em busca de novas histórias para mergulhar.</p>
                         <p className="text-white/40 mt-1">Entrou em {new Date(profileData.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
 

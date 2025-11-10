@@ -111,7 +111,7 @@ export default function AdminDashboard() {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-white">Painel Administrativo</h1>
+                <h1 data-page-title="Painel Administrativo" className="text-3xl font-bold text-white">Painel Administrativo</h1>
                 <p className="text-white/60 mt-2">Gerencie obras, usuários e configurações da plataforma</p>
             </div>
 

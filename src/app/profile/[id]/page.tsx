@@ -120,7 +120,7 @@ export default function PublicProfilePage() {
                         </AvatarFallback>
                     </Avatar>
 
-                    <h1 className="text-4xl font-bold text-white mt-6">{profileData.name || 'Usuário'}</h1>
+                    <h1 data-page-title={profileData.name || 'Usuário'} className="text-4xl font-bold text-white mt-6">{profileData.name || 'Usuário'}</h1>
                     <p className="text-white/60 mt-2">Leitor ativo e entusiasta de webtoons.</p>
                     <p className="text-white/40 mt-1">Membro desde {new Date(profileData.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</p>
                 </div>
