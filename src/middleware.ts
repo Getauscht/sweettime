@@ -19,7 +19,7 @@ export async function middleware(req: NextRequest) {
         '/api/',
         '/_next/',
         '/favicon.ico',
-        '/public/',
+        '/public/'
     ]
 
     const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
@@ -45,14 +45,20 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
+    // Protect only the application areas that require authentication.
+    // This prevents middleware from running on every public route and avoids
+    // redirecting unauthenticated visitors away from public pages.
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - public folder
-         */
-        '/((?!_next/static|_next/image|favicon.ico|public).*)',
+        // Admin / management UI
+        '/admin/:path*',
+        '/painel/:path*',
+        // User personal area
+        '/profile/:path*',
+        // Common frontend routes that should be private
+        '/reading-history/:path*',
+        '/favorites/:path*',
+        '/notifications/:path*',
+        // Private API endpoints (move sensitive APIs here)
+        '/api/admin/:path*',
     ],
 }

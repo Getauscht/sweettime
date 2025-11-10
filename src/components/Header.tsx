@@ -49,7 +49,7 @@ export default function Header() {
                 <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded flex items-center justify-center">
                   <span className="text-white text-sm font-bold">📖</span>
                 </div>
-                <span className="text-xl font-bold text-white">StoryVerse</span>
+                <span className="text-xl font-bold text-white">Sweet Time</span>
               </Link>
 
               <nav className="hidden lg:flex items-center gap-6">
