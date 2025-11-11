@@ -9,13 +9,28 @@ import { Button } from '@/components/ui/button'
 import SearchBar from '@/components/SearchBar'
 import { NotificationBell } from '@/components/ui/notification-bell'
 import { User, Menu, X, LogOut } from 'lucide-react'
+import Image from 'next/image';
+// Note: prisma is a server-only client; avoid importing it into a client component.
 
-export default function Header() {
+declare global {
+  interface Window {
+    __APP_SETTINGS?: {
+      siteName?: string | null
+      logoDataUrl?: string | null
+      logoUrl?: string | null
+    }
+  }
+
+}
+
+export default function Header({ initialLogo, initialSiteName }: { initialLogo?: string | null; initialSiteName?: string | null }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialLogo ?? null)
+  const [siteName, setSiteName] = useState<string>(initialSiteName ?? 'Sweet Time')
   const accountRef = useRef<HTMLDivElement | null>(null)
 
   const navLinks = [
@@ -37,6 +52,102 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [accountRef])
 
+  useEffect(() => {
+    // First try to read injected settings from the initial HTML (inlined by the server layout).
+    if (typeof window !== 'undefined' && window.__APP_SETTINGS) {
+      const s = window.__APP_SETTINGS
+      if (s.logoDataUrl) {
+        setLogoUrl(s.logoDataUrl)
+      } else if (s.logoUrl) {
+        setLogoUrl(s.logoUrl)
+      }
+      if (s.siteName) setSiteName(s.siteName)
+      return
+    }
+
+    // Fallback: Fetch site settings from the public API to get logo URL (legacy behavior)
+    let mounted = true
+
+      ; (async () => {
+        try {
+          const res = await fetch('/api/settings')
+          if (!res.ok) return
+          const data = await res.json()
+          if (!mounted) return
+          if (data.logoDataUrl) setLogoUrl(data.logoDataUrl) // in case API starts returning data URLs
+          else if (data.logoUrl) setLogoUrl(data.logoUrl)
+          if (data.siteName) setSiteName(data.siteName)
+        } catch {
+          // silent
+        }
+      })()
+
+    return () => { mounted = false }
+  }, [])
+
+  // Preload the logo image once we have the URL to improve perceived load time
+  useEffect(() => {
+    if (!logoUrl) return
+    // Avoid adding duplicate preload links
+    const safeHref = logoUrl
+    try {
+      const selector = `link[rel="preload"][href="${safeHref}"]`
+      if (document.querySelector(selector)) return
+    } catch {
+      // if logoUrl contains characters that break the selector, continue and append
+    }
+
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = safeHref
+
+    // Try to set a type when we can (helps some browsers choose the right decoder)
+    let preconnectEl: HTMLLinkElement | null = null
+    try {
+      const u = new URL(safeHref, window.location.href)
+      const pathname = u.pathname || ''
+      const ext = pathname.split('.').pop()?.toLowerCase() || ''
+      if (ext === 'svg') link.type = 'image/svg+xml'
+      else if (ext === 'png') link.type = 'image/png'
+      else if (ext === 'jpg' || ext === 'jpeg') link.type = 'image/jpeg'
+      else if (ext === 'webp') link.type = 'image/webp'
+
+      // If the logo is hosted on a different origin, add crossorigin and a preconnect
+      if (u.origin !== window.location.origin) {
+        link.setAttribute('crossorigin', 'anonymous')
+
+        // Add a preconnect for the external origin to speed up the request
+        try {
+          const pcSelector = `link[rel="preconnect"][href="${u.origin}"]`
+          if (!document.querySelector(pcSelector)) {
+            const preconnect = document.createElement('link')
+            preconnect.rel = 'preconnect'
+            preconnect.href = u.origin
+            preconnect.setAttribute('crossorigin', 'anonymous')
+            document.head.appendChild(preconnect)
+            preconnectEl = preconnect
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // ignore URL parse/type detection errors
+    }
+
+    document.head.appendChild(link)
+
+    return () => {
+      try {
+        if (link.parentNode) link.parentNode.removeChild(link)
+        if (preconnectEl && preconnectEl.parentNode) preconnectEl.parentNode.removeChild(preconnectEl)
+      } catch {
+        // ignore
+      }
+    }
+  }, [logoUrl])
+
   return (
     <>
       {/* Header */}
@@ -46,10 +157,17 @@ export default function Header() {
             {/* Logo and Desktop Nav */}
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">📖</span>
-                </div>
-                <span className="text-xl font-bold text-white">Sweet Time</span>
+                {logoUrl ? (
+                  // Use a plain img tag like the settings page does
+                  <Image src={logoUrl} alt={siteName || 'Site logo'} className="max-h-8 object-contain" width={128} height={32} />
+                ) : (
+                  <>
+                    <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">📖</span>
+                    </div>
+                    <span className="text-xl font-bold text-white">{siteName}</span>
+                  </>
+                )}
               </Link>
 
               <nav className="hidden lg:flex items-center gap-6">
