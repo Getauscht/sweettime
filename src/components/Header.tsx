@@ -10,6 +10,9 @@ import SearchBar from '@/components/SearchBar'
 import { NotificationBell } from '@/components/ui/notification-bell'
 import { User, Menu, X, LogOut } from 'lucide-react'
 import Image from 'next/image';
+// Use plain <img> for the logo because the logo may be a data URL or
+// an externally hosted image not covered by Next's image optimization
+// config. A comment below also mentioned using a plain img tag.
 // Note: prisma is a server-only client; avoid importing it into a client component.
 
 declare global {
@@ -158,7 +161,8 @@ export default function Header({ initialLogo, initialSiteName }: { initialLogo?:
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2">
                 {logoUrl ? (
-                  // Use a plain img tag like the settings page does
+                  // Use a plain img tag like the settings page does — avoids Next/Image
+                  // restrictions for data: URIs and unknown remote domains.
                   <Image src={logoUrl} alt={siteName || 'Site logo'} className="max-h-8 object-contain" width={128} height={32} />
                 ) : (
                   <>
