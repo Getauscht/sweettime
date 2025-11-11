@@ -84,16 +84,27 @@ export default async function RootLayout({
       } else {
         // Treat as local path. Normalize possible "public/..." or "/uploads/..." values.
         const rel = logoUrl.replace(/^public\//, '').replace(/^\//, '')
-        const absPath = path.join(process.cwd(), 'public', rel)
+        // Check both `public/` (legacy) and runtime `uploads/` folder where
+        // files uploaded at runtime are stored.
+        const candidates = [
+          path.join(process.cwd(), 'public', rel),
+          path.join(process.cwd(), 'uploads', rel),
+        ]
+
         try {
-          if (fs.existsSync(absPath)) {
-            const buffer = await fs.promises.readFile(absPath)
-            const ext = path.extname(rel) || ''
+          let found: string | null = null
+          for (const absPath of candidates) {
+            if (fs.existsSync(absPath)) { found = absPath; break }
+          }
+
+          if (found) {
+            const buffer = await fs.promises.readFile(found)
+            const ext = path.extname(found) || ''
             const mime = mimeFromExt(ext)
             const base64 = buffer.toString('base64')
             initialSettings.logoDataUrl = `data:${mime};base64,${base64}`
           } else {
-            // file not found in public; fallback: pass original string as logoUrl
+            // file not found; fallback: pass original string as logoUrl
             initialSettings.logoUrl = logoUrl
           }
         } catch (err) {

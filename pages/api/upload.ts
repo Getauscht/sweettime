@@ -101,8 +101,11 @@ async function handler(
             return res.status(400).json({ error: 'Uploaded file path missing' })
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', type || 'general')
+        // Create uploads directory (runtime) if it doesn't exist
+        // We store runtime uploads outside of `public/` so the Next.js build
+        // artifact/static packaging does not prevent newly uploaded files
+        // from being served without a server restart.
+        const uploadDir = path.join(process.cwd(), 'uploads', type || 'general')
         await fs.mkdir(uploadDir, { recursive: true })
 
         // If this is a chapter upload, ensure the user is a member of the webtoon's group (or has upload/assign permission)
@@ -174,6 +177,9 @@ async function handler(
             // Delete temp file
             await fs.unlink(tempPath).catch(() => undefined)
 
+            // We keep returning a site-root URL path under /uploads so existing
+            // client code does not need to change. A separate dynamic route
+            // will serve files from the runtime `uploads/` folder.
             const url = `/uploads/${type || 'general'}/${filename}`
 
             return res.status(200).json({
